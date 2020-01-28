@@ -5,10 +5,12 @@ import { IGuestGroup } from "../store/guest-groups";
 import { AlgoliaSearchKeyContext } from "./algolia-search-key";
 import { useStateSelector } from "../store/redux";
 import { Checkmark } from "grommet-icons";
+import { INewGuestGroup } from "../store/use-new-guests-reducer";
 
+type TGuestGroup = INewGuestGroup | IGuestGroup;
 export interface IProps {
-  onSelect: (group: IGuestGroup) => any;
-  unsavedGroups?: IGuestGroup[];
+  onSelect: (group: TGuestGroup) => any;
+  unsavedGroups?: TGuestGroup[];
   selectedIds?: string[];
   onCreateNewGroup?: (name: string) => any;
 }

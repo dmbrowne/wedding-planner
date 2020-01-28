@@ -5,7 +5,7 @@ import { Group, Add } from "grommet-icons";
 import * as yup from "yup";
 import { Formik, Field, FormikErrors } from "formik";
 
-import { INewGuest } from "../store/use-new-guests-reducer";
+import { INewGuest, INewGuestGroup } from "../store/use-new-guests-reducer";
 import { ReactComponent as CoupleIcon } from "../icons/couple.svg";
 import { useStateSelector } from "../store/redux";
 import { fetchGuest } from "../store/guests-actions";

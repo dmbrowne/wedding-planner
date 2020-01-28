@@ -7,6 +7,7 @@ export interface IGuestGroup {
   members: string[];
   jointInvitations?: boolean;
   fetching?: boolean;
+  weddingId: string;
 }
 
 export interface IReducer {
@@ -15,7 +16,10 @@ export interface IReducer {
   };
 }
 
-export const createGuestGroups = (groups: IGuestGroup[]): Thunk<void, any> => async (dispatch, getState) => {
+export const createGuestGroups = (groups: Omit<IGuestGroup, "weddingId">[]): Thunk<void, any> => async (
+  dispatch,
+  getState
+) => {
   const weddingId = getState().activeWeddingId;
   const db = firebase.firestore();
 
@@ -23,11 +27,11 @@ export const createGuestGroups = (groups: IGuestGroup[]): Thunk<void, any> => as
 
   try {
     if (groups.length === 1) {
-      await db.doc(`weddings/${weddingId}/guestGroups/${groups[0].id}`).set(groups[0]);
+      await db.doc(`guestGroups/${groups[0].id}`).set({ ...groups[0], weddingId });
     } else {
       const batch = db.batch();
       groups.forEach(group => {
-        const ref = db.doc(`weddings/${weddingId}/guestGroups/${group.id}`);
+        const ref = db.doc(`guestGroups/${group.id}`);
         batch.set(ref, group);
       });
       await batch.commit();

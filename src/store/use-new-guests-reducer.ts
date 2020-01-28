@@ -2,8 +2,10 @@ import { IGuest } from "./types";
 import { IGuestGroup } from "./guest-groups";
 import shortId from "shortid";
 import { useReducer } from "react";
+import { useStateSelector } from "./redux";
 
-export interface INewGuest extends IGuest {}
+export interface INewGuest extends Omit<IGuest, "weddingId"> {}
+export interface INewGuestGroup extends Omit<IGuestGroup, "weddingId"> {}
 
 interface IReducerState {
   byId: { [id: string]: INewGuest };
@@ -211,7 +213,7 @@ function newGuestsReducer(state: IReducerState, action: IActions) {
                 groupIds: [...(state.byId[guestId].groupIds || []), newId]
               }
             }),
-            {}
+            {} as any
           )
         }
       };
@@ -284,6 +286,7 @@ function newGuestsReducer(state: IReducerState, action: IActions) {
 
 export default function useNewGuestsReducer(defaultState = initialState) {
   const [state, dispatch] = useReducer(newGuestsReducer, defaultState);
+  const weddingId = useStateSelector(state => state.activeWeddingId);
   const checkedList = Object.keys(state.checkedGuests).filter(id => !!state.checkedGuests[id]);
   const guests = state.order.map(id => state.byId[id]);
 
@@ -306,7 +309,8 @@ export default function useNewGuestsReducer(defaultState = initialState) {
       unlinkCouple: (partner1Id: string, partner2Id: string) =>
         dispatch({ type: "unlink_couple", payload: { partner1Id, partner2Id } }),
 
-      addNewGroup: (details: Omit<IGuestGroup, "id">) => dispatch({ type: "add_new_group", payload: details }),
+      addNewGroup: (details: Omit<INewGuestGroup, "id">) =>
+        dispatch({ type: "add_new_group", payload: { ...details, weddingId } }),
       deleteNewGroup: (id: string) => dispatch({ type: "remove_new_group", payload: { id } }),
       addGuestToGroup: (guestId: string, groupId: string) =>
         dispatch({ type: "add_guest_to_group", payload: { groupId, guestId } }),

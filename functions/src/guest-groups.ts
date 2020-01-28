@@ -6,14 +6,15 @@ interface IGuest {
   id: string;
   name: string;
   email?: string;
+  weddingId: string;
   preferredName?: string;
   partnerId?: string;
   groupIds?: string[];
 }
 
-function addMemberIdToExistingGuestGroups(groupIds: string[], memberId: string, weddingId: string) {
+function addMemberIdToExistingGuestGroups(groupIds: string[], memberId: string) {
   return groupIds.map(groupId => {
-    const ref = admin.firestore().doc(`weddings/${weddingId}/guestGroups/${groupId}`);
+    const ref = admin.firestore().doc(`guestGroups/${groupId}`);
     return admin.firestore().runTransaction(function(transaction) {
       return transaction.get(ref).then(doc => {
         if (!doc.exists) {
@@ -26,9 +27,9 @@ function addMemberIdToExistingGuestGroups(groupIds: string[], memberId: string, 
   });
 }
 
-function removeMemberIdFromExistingGuestGroups(groupIds: string[], memberId: string, weddingId: string) {
+function removeMemberIdFromExistingGuestGroups(groupIds: string[], memberId: string) {
   return groupIds.map(groupId => {
-    const ref = admin.firestore().doc(`weddings/${weddingId}/guestGroups/${groupId}`);
+    const ref = admin.firestore().doc(`guestGroups/${groupId}`);
     return admin.firestore().runTransaction(function(transaction) {
       return transaction.get(ref).then(doc => {
         if (!doc.exists) {
@@ -41,15 +42,13 @@ function removeMemberIdFromExistingGuestGroups(groupIds: string[], memberId: str
   });
 }
 
-export const modifyAlgoliaGuestGroup = functions.firestore
-  .document("weddings/{weddingId}/guestGroups/{groupId}")
-  .onWrite((change, { params }) => {
-    return modifyAlgoliaDocument<IGuest>("guestGroups", change, params.weddingId);
-  });
+export const modifyAlgoliaGuestGroup = functions.firestore.document("guestGroups/{groupId}").onWrite(change => {
+  return modifyAlgoliaDocument<IGuest>("guestGroups", change);
+});
 
 export const updateGuestGroupMemberIdsOnGuestUpdate = functions.firestore
-  .document("weddings/{weddingId}/guests/{guestId}")
-  .onUpdate(({ before, after }, context) => {
+  .document("guests/{guestId}")
+  .onUpdate(({ before, after }) => {
     const { groupIds: bfreGroupIds } = before.data() as IGuest;
     const { groupIds: aftrGroupIds } = after.data() as IGuest;
 
@@ -62,41 +61,35 @@ export const updateGuestGroupMemberIdsOnGuestUpdate = functions.firestore
       const addedGroupIds = aftrGroupIds.filter(x => !bfreGroupIds.includes(x));
 
       const removeFromGroups = !removedGroupIds.length
-        ? removeMemberIdFromExistingGuestGroups(removedGroupIds, context.params.weddingId, after.id)
+        ? removeMemberIdFromExistingGuestGroups(removedGroupIds, after.id)
         : [Promise.resolve()];
 
       const addToGroups = !addedGroupIds.length
-        ? addMemberIdToExistingGuestGroups(addedGroupIds, context.params.weddingId, after.id)
+        ? addMemberIdToExistingGuestGroups(addedGroupIds, after.id)
         : [Promise.resolve()];
 
       return Promise.all([...removeFromGroups, ...addToGroups]);
     } else if (!bfreGroupIds && aftrGroupIds) {
-      addMemberIdToExistingGuestGroups(aftrGroupIds, context.params.weddingId, after.id);
+      addMemberIdToExistingGuestGroups(aftrGroupIds, after.id);
     } else if (bfreGroupIds && !aftrGroupIds) {
-      addMemberIdToExistingGuestGroups(bfreGroupIds, context.params.weddingId, after.id);
+      addMemberIdToExistingGuestGroups(bfreGroupIds, after.id);
     }
 
     return true;
   });
 
-export const addMemberIdToGuestGroupOnCreateGuest = functions.firestore
-  .document("weddings/{weddingId}/guests/{guestId}")
-  .onCreate((snap, cntxt) => {
-    const { groupIds } = snap.data() as { groupIds?: string[] };
-    const updates = groupIds
-      ? addMemberIdToExistingGuestGroups(groupIds, cntxt.params.weddingId, snap.id)
-      : [Promise.resolve()];
+export const addMemberIdToGuestGroupOnCreateGuest = functions.firestore.document("guests/{guestId}").onCreate(snap => {
+  const { groupIds } = snap.data() as { groupIds?: string[] };
+  const updates = groupIds ? addMemberIdToExistingGuestGroups(groupIds, snap.id) : [Promise.resolve()];
 
-    return Promise.all(updates);
-  });
+  return Promise.all(updates);
+});
 
 export const removeMemberIdFromGuestGroupOnGuestDelete = functions.firestore
-  .document("weddings/{weddingId}/guests/{guestId}")
-  .onDelete((snap, cntxt) => {
+  .document("guests/{guestId}")
+  .onDelete(snap => {
     const { groupIds } = snap.data() as { id: string; groupIds?: string[] };
-    const updates = groupIds
-      ? removeMemberIdFromExistingGuestGroups(groupIds, cntxt.params.weddingId, snap.id)
-      : [Promise.resolve()];
+    const updates = groupIds ? removeMemberIdFromExistingGuestGroups(groupIds, snap.id) : [Promise.resolve()];
 
     return Promise.all(updates);
   });

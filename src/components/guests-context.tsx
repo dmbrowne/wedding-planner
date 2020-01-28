@@ -56,12 +56,7 @@ export const GuestsProvider = connect<TReduxProps, {}, {}, IRootReducer>(state =
   class GuestsProviderComponent extends Component<TReduxProps & DispatchProp> {
     listingSubscribedGuestIds: string[] = [];
     unsubscribeGuestListingWatch: undefined | (() => void) = undefined;
-    getDbRef = (weddingId?: string) => firebase.firestore().collection(`weddings/${weddingId}/guests`);
-
-    constructor(props: TReduxProps & DispatchProp) {
-      super(props);
-      this.getDbRef = this.getDbRef.bind(this, props.weddingId);
-    }
+    getDbRef = () => firebase.firestore().collection(`guests`);
 
     getDocumentRef = (guestId: string) => this.getDbRef().doc(guestId);
 
@@ -102,16 +97,18 @@ export const GuestsProvider = connect<TReduxProps, {}, {}, IRootReducer>(state =
     };
 
     guestsListingWatch = () => {
-      const { dispatch } = this.props;
+      const { dispatch, weddingId } = this.props;
       const pageNumber = 1;
 
       if (this.unsubscribeGuestListingWatch) {
         this.unsubscribeGuestListingWatch();
       }
 
-      this.props.dispatch(subscribeToPath(this.getDbRef().path));
+      const ref = this.getDbRef();
+      this.props.dispatch(subscribeToPath(ref.path));
 
-      const unsubscribe = this.getDbRef()
+      const unsubscribe = ref
+        .where("weddingId", "==", weddingId)
         .orderBy("name", "asc")
         .limit(21 * pageNumber)
         .onSnapshot(snap => {
@@ -133,7 +130,7 @@ export const GuestsProvider = connect<TReduxProps, {}, {}, IRootReducer>(state =
 
       this.unsubscribeGuestListingWatch = () => {
         unsubscribe();
-        this.props.dispatch(unsubscribeFromPath(this.getDbRef().path));
+        this.props.dispatch(unsubscribeFromPath(ref.path));
         this.listingSubscribedGuestIds.forEach(id => {
           this.props.dispatch(unsubscribeGuestFetch(id));
         });

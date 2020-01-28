@@ -2,9 +2,10 @@ import React from "react";
 import { Heading, Text } from "grommet";
 import AlgoliaGuestSearch, { IProps as IAlgoliaSearchProps } from "./algolia-guest-search";
 import { IGuest } from "../store/types";
+import { INewGuest } from "../store/use-new-guests-reducer";
 
 export interface IProps extends Pick<IAlgoliaSearchProps, "unsavedGuests" | "hideGuests"> {
-  onSelectPartner: (guest: IGuest) => any;
+  onSelectPartner: (guest: IGuest | INewGuest) => any;
 }
 
 const AddPartner: React.FC<IProps> = ({ onSelectPartner, ...props }) => {

@@ -64,7 +64,7 @@ const App: React.FC = () => {
               <Box fill>
                 <div>
                   <Switch>
-                    <Route path="/wedding/:weddingId" component={WeddingPlanningRoutes} />
+                    <AuthenticatedRoute path="/wedding/:weddingId" component={WeddingPlanningRoutes} />
                     <AuthenticatedRoute path="/wedding" component={WeddingSelect} />
                     <Route path="/login" component={Login} />
                     <Route exact path="/" component={Home} />

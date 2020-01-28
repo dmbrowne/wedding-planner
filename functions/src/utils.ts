@@ -10,18 +10,14 @@ export const agoliaClient = algolia(ALGOLIA_ID, ALGOLIA_ADMIN_KEY);
 export function modifyAlgoliaDocument<D>(
   indexName: string,
   { before, after }: functions.Change<functions.firestore.DocumentSnapshot>,
-  weddingId: string,
-  transformData?: (
-    data: D & { objectID: string; weddingId: string; [key: string]: any }
-  ) => { objectID: string; [key: string]: any }
+  transformData?: (data: D & { objectID: string; [key: string]: any }) => { objectID: string; [key: string]: any }
 ) {
   const isDeletion = before.exists && !after.exists;
   const index = agoliaClient.initIndex(indexName);
 
   if (!isDeletion) {
-    const data = after.data() as D & { objectID: string; weddingId: string; [key: string]: any };
+    const data = after.data() as D & { objectID: string; [key: string]: any };
     data.objectID = after.id;
-    data.weddingId = weddingId;
     const guest = transformData ? transformData({ ...data }) : data;
     return index.saveObject(guest);
   }

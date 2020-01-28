@@ -29,18 +29,14 @@ export const addNewGuests = (guests: INewGuest[]): Thunk<void, IAddGuests | IAdd
   dispatch,
   getState
 ) => {
-  const { activeWeddingId } = getState();
+  const weddingId = getState().activeWeddingId;
   dispatch({ type: "guests/ADD", payload: guests });
 
   const batcher = firestore().batch();
 
   guests.forEach(guest => {
-    const ref = firestore()
-      .collection("weddings")
-      .doc(activeWeddingId)
-      .collection("guests")
-      .doc(guest.id);
-    batcher.set(ref, guest);
+    const ref = firestore().doc(`guests/${guest.id}`);
+    batcher.set(ref, { ...guest, weddingId });
   });
 
   batcher.commit().then(() =>
@@ -56,14 +52,13 @@ export const fetchGuestSuccess = (guest: IGuest, subscribed?: boolean) => ({
   meta: { subscribed }
 });
 
-export const fetchGuest = (guestId: string): Thunk<void, IFetchGuest | TFetchGuestSuccess | IFetchGuestError> => (
-  dispatch,
-  getState
-) => {
+export const fetchGuest = (
+  guestId: string
+): Thunk<void, IFetchGuest | TFetchGuestSuccess | IFetchGuestError> => dispatch => {
   dispatch({ type: "guests/FETCH", payload: { guestId } });
 
   firestore()
-    .doc(`weddings/${getState().activeWeddingId}/guests/${guestId}`)
+    .doc(`guests/${guestId}`)
     .get()
     .then(snap => {
       dispatch(fetchGuestSuccess({ id: snap.id, ...(snap.data() as any) }));

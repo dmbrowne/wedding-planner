@@ -27,7 +27,7 @@ const NewGuests: React.FC<RouteChildrenProps<{ weddingId: string }>> = ({ histor
   const dispatch = useDispatch();
   const { byId, newGroups, guests, checkedGuests, actions, checkedList } = useNewGuestsReducer();
   const [isValid, setIsValid] = useState(false);
-  const [partner, setpartner] = useState<IGuest | undefined>(undefined);
+  const [partner, setpartner] = useState<INewGuest | undefined>(undefined);
   const [modalType, setModalType] = useState<"group" | "partner" | "">("");
 
   useEffect(() => {
@@ -88,19 +88,19 @@ const NewGuests: React.FC<RouteChildrenProps<{ weddingId: string }>> = ({ histor
     history.push(`/wedding/${match?.params.weddingId}/guests`);
   };
 
-  const onSelectPartner = (guest: IGuest) => {
+  const onSelectPartner = (guestId: string) => {
     if (partner) {
-      actions.linkCouple(partner.id, guest.id);
+      actions.linkCouple(partner.id, guestId);
       closeModal();
     }
   };
 
-  const onSelectGroup = (group: IGuestGroup) => {
+  const onSelectGroup = (groupId: string) => {
     if (partner) {
-      if (partner.groupIds && partner.groupIds.includes(group.id)) {
-        actions.removeGuestFromGroup(partner.id, group.id);
+      if (partner.groupIds && partner.groupIds.includes(groupId)) {
+        actions.removeGuestFromGroup(partner.id, groupId);
       } else {
-        actions.addGuestToGroup(partner.id, group.id);
+        actions.addGuestToGroup(partner.id, groupId);
       }
     }
   };
@@ -167,14 +167,14 @@ const NewGuests: React.FC<RouteChildrenProps<{ weddingId: string }>> = ({ histor
             <Box>
               {modalType === "partner" && (
                 <AddPartner
-                  onSelectPartner={onSelectPartner}
+                  onSelectPartner={({ id }) => onSelectPartner(id)}
                   unsavedGuests={guests.slice(0, guests.length - 1).filter(newGuests => newGuests.id !== partner.id)}
                   hideGuests={[partner.id]}
                 />
               )}
               {modalType === "group" && (
                 <AddToGroup
-                  onSelect={onSelectGroup}
+                  onSelect={({ id }) => onSelectGroup(id)}
                   unsavedGroups={Object.values(newGroups)}
                   selectedIds={partner && partner.groupIds}
                   onCreateNewGroup={name => {

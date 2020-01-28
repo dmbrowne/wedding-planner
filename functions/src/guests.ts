@@ -2,23 +2,21 @@ import * as functions from "firebase-functions";
 import { modifyAlgoliaDocument } from "./utils";
 import * as admin from "firebase-admin";
 
-export const modifyAlgoliaGuest = functions.firestore
-  .document("weddings/{weddingId}/guests/{guestId}")
-  .onWrite((change, { params }) => {
-    return modifyAlgoliaDocument("guests", change, params.weddingId, data => {
-      data.hasPartner = !!data.partnerId;
-      data.hasEmail = !!data.email;
-      return data;
-    });
+export const modifyAlgoliaGuest = functions.firestore.document("guests/{guestId}").onWrite(change => {
+  return modifyAlgoliaDocument("guests", change, data => {
+    data.hasPartner = !!data.partnerId;
+    data.hasEmail = !!data.email;
+    return data;
   });
+});
 
 export const removeGroupIdFromGuestOnGroupDelete = functions.firestore
-  .document("weddings/{weddingId}/guestGroups/{groupId}")
-  .onDelete((snap, cntxt) => {
+  .document("guestGroups/{groupId}")
+  .onDelete(snap => {
     const { members } = snap.data() as { members?: string[] };
     const updates = members
       ? members.map(guestId => {
-          const ref = admin.firestore().doc(`weddings/${cntxt.params.weddingId}/guests/${guestId}`);
+          const ref = admin.firestore().doc(`guests/${guestId}`);
           return admin.firestore().runTransaction(function(transaction) {
             return transaction.get(ref).then(doc => {
               if (!doc.exists) {
@@ -34,8 +32,8 @@ export const removeGroupIdFromGuestOnGroupDelete = functions.firestore
   });
 
 export const updatePartnerOnGuestCreateOrDelete = functions.firestore
-  .document("weddings/{weddingId}/guests/{guestId}")
-  .onWrite(async ({ before, after }, context) => {
+  .document("guests/{guestId}")
+  .onWrite(async ({ before, after }) => {
     const isDeleteOperation = before.exists && !after.exists;
     const isCreareOperation = !before.exists && after.exists;
     const { partnerId } = after.data() as any;
@@ -46,7 +44,7 @@ export const updatePartnerOnGuestCreateOrDelete = functions.firestore
 
     const partner = await admin
       .firestore()
-      .doc(`weddings/${context.params.weddingId}/guests/${partnerId}`)
+      .doc(`guests/${partnerId}`)
       .get();
 
     if (!partner.exists) {

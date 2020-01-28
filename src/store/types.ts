@@ -6,4 +6,5 @@ export interface IGuest {
   partnerId?: string;
   groupIds?: string[];
   fetching?: boolean;
+  weddingId: string;
 }

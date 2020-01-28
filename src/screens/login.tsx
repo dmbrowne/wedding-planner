@@ -22,14 +22,38 @@ const Login: React.FC<RouteComponentProps> = ({ location, history }) => {
     signInSuccessUrl = urlParams["redirect"] || signInSuccessUrl;
   }
 
+  const createNewUser = async (auth: firebase.auth.UserCredential) => {
+    const { user, additionalUserInfo } = auth;
+    if (user && additionalUserInfo) {
+      if (additionalUserInfo.isNewUser) {
+        const { uid, displayName, email } = user;
+        await firebase
+          .firestore()
+          .collection("users")
+          .doc(uid)
+          .set({ email, name: displayName });
+        return true;
+      } else {
+        return true;
+      }
+    } else {
+      if (auth.user) {
+        await firebase.auth().signOut();
+      }
+      throw Error("Error retriving auth credentials after sign in");
+    }
+  };
+
   useEffect(() => {
     if (loginElementRef.current && !uiLoaded) {
       ui.start(loginElementRef.current, {
         signInOptions: [{ provider: firebase.auth.EmailAuthProvider.PROVIDER_ID, requireDisplayName: false }],
         callbacks: {
           uiShown: () => setUiLoaded(true),
-          signInSuccessWithAuthResult: () => {
-            setTimeout(() => history.push(signInSuccessUrl));
+          signInSuccessWithAuthResult: authResult => {
+            createNewUser(authResult)
+              .then(() => history.push(signInSuccessUrl))
+              .catch(() => history.push("/"));
             return false;
           }
         }

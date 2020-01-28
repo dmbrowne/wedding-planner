@@ -4,10 +4,12 @@ import { TextInput, Text, Box } from "grommet";
 import { IGuest } from "../store/types";
 import { AlgoliaSearchKeyContext } from "./algolia-search-key";
 import { Spinner } from "gestalt";
+import { INewGuest } from "../store/use-new-guests-reducer";
 
+type TGuest = IGuest | INewGuest;
 export interface IProps {
-  onSelect: (guest: IGuest) => any;
-  unsavedGuests?: IGuest[];
+  onSelect: (guest: TGuest) => any;
+  unsavedGuests?: TGuest[];
   hideGuests?: string[];
   filters?: string;
 }
