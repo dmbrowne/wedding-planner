@@ -21,12 +21,18 @@ import { AlgoliaSearchKeyProvider } from "./components/algolia-search-key";
 import { GuestsProvider } from "./components/guests-context";
 import "gestalt/dist/gestalt.css";
 
-const ContentContainer = styled.div`
-  width: 100%;
-  max-width: 1248px;
-  padding: 0 24px;
-  margin: auto;
-  box-sizing: border-box;
+const StandardBox = styled(Box).attrs({ fill: "horizontal", background: "light-2" })`
+  min-height: 100%;
+`;
+
+const AppFrame = styled(Box).attrs({ direction: "row", background: "light-2" })`
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+`;
+
+const Main = styled(Box).attrs({ height: "100%", fill: "horizontal" })`
+  overflow: auto;
 `;
 
 const WeddingPlanningRoutes: React.FC<RouteComponentProps<{ weddingId: string }>> = ({ match }) => {
@@ -40,14 +46,18 @@ const WeddingPlanningRoutes: React.FC<RouteComponentProps<{ weddingId: string }>
     <Route>
       <AlgoliaSearchKeyProvider>
         <GuestsProvider>
-          <SiteNav rootPath={match.url} />
-          <ContentContainer>
-            <Switch>
-              <AuthenticatedRoute path={`${match.path}/guests/create`} component={CreateGuests} />
-              <AuthenticatedRoute path={`${match.path}/guests`} component={Attendees} />
-              <AuthenticatedRoute component={WeddingHome} />
-            </Switch>
-          </ContentContainer>
+          <AppFrame>
+            <Box width="240px" background="white">
+              <SiteNav rootPath={match.url} />
+            </Box>
+            <Main>
+              <Switch>
+                <AuthenticatedRoute path={`${match.path}/guests/create`} component={CreateGuests} />
+                <AuthenticatedRoute path={`${match.path}/guests`} component={Attendees} />
+                <AuthenticatedRoute component={WeddingHome} />
+              </Switch>
+            </Main>
+          </AppFrame>
         </GuestsProvider>
       </AlgoliaSearchKeyProvider>
     </Route>
@@ -61,16 +71,15 @@ const App: React.FC = () => {
         <AuthProvider>
           <ThemeProvider theme={grommetTheme}>
             <Grommet theme={grommetTheme} full>
-              <Box fill>
-                <div>
-                  <Switch>
-                    <AuthenticatedRoute path="/wedding/:weddingId" component={WeddingPlanningRoutes} />
-                    <AuthenticatedRoute path="/wedding" component={WeddingSelect} />
-                    <Route path="/login" component={Login} />
-                    <Route exact path="/" component={Home} />
-                  </Switch>
-                </div>
-              </Box>
+              <Switch>
+                <AuthenticatedRoute path="/wedding/:weddingId" component={WeddingPlanningRoutes} />
+                <AuthenticatedRoute
+                  path="/wedding"
+                  render={props => <StandardBox children={<WeddingSelect {...props} />} />}
+                />
+                <Route path="/login" render={props => <StandardBox children={<Login {...props} />} />} />
+                <Route exact path="/" render={props => <StandardBox children={<Home {...props} />} />} />
+              </Switch>
             </Grommet>
           </ThemeProvider>
         </AuthProvider>
