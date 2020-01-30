@@ -20,6 +20,8 @@ import store, { useStateSelector } from "./store/redux";
 import { AlgoliaSearchKeyProvider } from "./components/algolia-search-key";
 import { GuestsProvider } from "./components/guests-context";
 import "gestalt/dist/gestalt.css";
+import Events from "./screens/events";
+import EventDetail from "./screens/event-detail";
 
 const StandardBox = styled(Box).attrs({ fill: "horizontal", background: "light-2" })`
   min-height: 100%;
@@ -47,11 +49,13 @@ const WeddingPlanningRoutes: React.FC<RouteComponentProps<{ weddingId: string }>
       <AlgoliaSearchKeyProvider>
         <GuestsProvider>
           <AppFrame>
-            <Box width="240px" background="white">
+            <Box basis="medium" background="white">
               <SiteNav rootPath={match.url} />
             </Box>
             <Main>
               <Switch>
+                <AuthenticatedRoute path={`${match.path}/events/:eventId`} component={EventDetail} />
+                <AuthenticatedRoute path={`${match.path}/events`} component={Events} />
                 <AuthenticatedRoute path={`${match.path}/guests/create`} component={CreateGuests} />
                 <AuthenticatedRoute path={`${match.path}/guests`} component={Attendees} />
                 <AuthenticatedRoute component={WeddingHome} />

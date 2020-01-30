@@ -9,4 +9,5 @@ export interface IGuest {
   weddingId: string;
   weddingTitle?: string;
   weddingParty?: "groom" | "bridal";
+  isPlusOne?: boolean;
 }
