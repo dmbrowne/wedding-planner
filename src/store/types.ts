@@ -7,4 +7,6 @@ export interface IGuest {
   groupIds?: string[];
   fetching?: boolean;
   weddingId: string;
+  weddingTitle?: string;
+  weddingParty?: "groom" | "bridal";
 }

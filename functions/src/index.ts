@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import * as guests from "./guests";
 import * as guestGroups from "./guest-groups";
 import * as wedding from "./wedding";
+import * as auth from "./auth";
 import getAlgoliaSearchKey from "./get-search-key";
 
 admin.initializeApp();
@@ -15,3 +16,4 @@ exports.addMemberIdToGuestGroupOnCreateGuest = guestGroups.addMemberIdToGuestGro
 exports.removeMemberIdFromGuestGroupOnGuestDelete = guestGroups.removeMemberIdFromGuestGroupOnGuestDelete;
 exports.getAlgoliaSearchKey = getAlgoliaSearchKey;
 exports.removeGuestsAndGroupsOnWeddingDelete = wedding.removeGuestsAndGroupsOnWeddingDelete;
+exports.createUserOnAccountCreate = auth.createUserOnAccountCreate;
