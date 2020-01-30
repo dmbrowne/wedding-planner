@@ -11,11 +11,9 @@ export interface IProps extends Pick<IAlgoliaSearchProps, "unsavedGuests" | "hid
 const AddPartner: React.FC<IProps> = ({ onSelectPartner, ...props }) => {
   return (
     <>
-      <Heading level={3} as="header" margin={{ bottom: "small" }}>
-        Add partner / +1
-      </Heading>
+      <Heading level={3} as="header" margin={{ bottom: "small" }} children="Add partner" />
       <Text color="dark-6" margin={{ bottom: "medium" }}>
-        Search guests that currently don't have a partner, to select them as a partner or +1
+        Search guests that currently don't have a partner, to select them as a partner
       </Text>
       <AlgoliaGuestSearch onSelect={guest => onSelectPartner(guest)} filters="hasPartner = 0" {...props} />
     </>

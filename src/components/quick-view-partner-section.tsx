@@ -20,7 +20,7 @@ export const QuickViewPartnerSection: React.FC<IProps> = ({ guest, onRemoveCoupl
   return (
     <>
       <QuickViewSectionHeading
-        title="Partner / +1"
+        title="Partner"
         showToggle={!!guest.partnerId}
         onToggle={() => setEditMode(!editMode)}
         toggleLabel={editMode ? "close" : "edit"}
@@ -46,7 +46,7 @@ export const QuickViewPartnerSection: React.FC<IProps> = ({ guest, onRemoveCoupl
         </Box>
       ) : (
         <Box direction="row" align="start">
-          <Text color="dark-4" size="small" margin={{ right: "xxsmall" }} children="No partner or +1, " />
+          <Text color="dark-4" size="small" margin={{ right: "xxsmall" }} children="No partner, " />
           <Button plain onClick={() => setEditMode(true)} children={<Text size="small" children="add one?" />} />
         </Box>
       )}

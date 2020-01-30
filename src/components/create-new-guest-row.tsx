@@ -148,7 +148,6 @@ export const CreateNewGuestRowComponent: React.FC<IProps> = ({
                     <Button active onClick={onAddNewPartner}>
                       <Box direction="row" pad="small">
                         <CoupleIcon style={{ height: 24 }} />
-                        <Text>&nbsp;&nbsp;/ +1</Text>
                       </Box>
                     </Button>
                   )}
