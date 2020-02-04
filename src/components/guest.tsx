@@ -1,20 +1,21 @@
-import React, { ReactNode, useEffect, useContext, useState, ReactElement } from "react";
+import React, { useEffect, useContext, useState, ReactElement } from "react";
 import { useStateSelector } from "../store/redux";
 import { GuestsContext } from "./guests-context";
 import { useDispatch } from "react-redux";
 import { fetchGuestSuccess } from "../store/guests-actions";
 import { IGuest } from "../store/types";
 
-type TRenderProp = (value: { guest: IGuest | null; fetching: boolean; ready: boolean }) => any;
+type TRenderProp = (value: { guest: IGuest; fetching: boolean }) => ReactElement;
 
 interface IProps {
   id: string;
   children?: TRenderProp;
-  render?: TRenderProp;
   subscribeWhileMounted?: boolean;
+  renderNoGuestFound?: () => ReactElement;
+  renderLoading?: () => ReactElement;
 }
 
-const Guest: React.FC<IProps> = ({ render, children, id, subscribeWhileMounted }) => {
+const Guest: React.FC<IProps> = ({ children, id, subscribeWhileMounted, renderNoGuestFound, renderLoading }) => {
   const dispatch = useDispatch();
   const guest = useStateSelector(state => state.guests.byId[id]);
   const [fetching, setfetching] = useState(!guest);
@@ -42,11 +43,15 @@ const Guest: React.FC<IProps> = ({ render, children, id, subscribeWhileMounted }
     };
   }, [id]);
 
-  return children
-    ? children({ guest, fetching, ready: !!guest && !fetching })
-    : render
-    ? render({ guest, fetching, ready: !!guest && !fetching })
-    : null;
+  if (!guest && !fetching) {
+    return renderNoGuestFound ? renderNoGuestFound() : null;
+  }
+
+  if (!guest && fetching) {
+    return renderLoading ? renderLoading() : null;
+  }
+
+  return children ? children({ guest, fetching }) : null;
 };
 
 export default Guest;

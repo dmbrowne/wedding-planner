@@ -79,7 +79,7 @@ export default function guestsReducer(state = initialState, action: TActions) {
         ...state,
         byId: {
           ...state.byId,
-          [action.payload.id]: { ...action.payload, fetching: false }
+          [action.payload.id]: { ...state.byId[action.payload.id], ...action.payload, fetching: false }
         }
       };
     default:

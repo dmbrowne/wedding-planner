@@ -13,6 +13,7 @@ import {
 import { IGuest } from "../store/types";
 
 type TReduxProps = {
+  hasMore: boolean;
   weddingId: string;
   currentPageNumber: number;
   subscriptionPaths: {
@@ -27,7 +28,8 @@ type TSubscriptionCallback = (snap: firebase.firestore.DocumentSnapshot<firebase
 
 interface IGuestContext {
   unsubscribeGuestListingWatch: undefined | (() => void);
-  guestsListingWatch: () => void;
+  startWatch: () => void;
+  loadMore: () => void;
   listenToDocumentRef: (guestId: string, cb?: TSubscriptionCallback) => null | (() => void);
   getDocumentRef: (guestId: string) => firebase.firestore.DocumentReference;
   setCouple: (guest1Id: string, guest2Id: string) => Promise<void>;
@@ -38,7 +40,8 @@ interface IGuestContext {
 
 export const GuestsContext = React.createContext<IGuestContext>({
   unsubscribeGuestListingWatch: undefined,
-  guestsListingWatch: () => {},
+  startWatch: () => {},
+  loadMore: () => {},
   listenToDocumentRef: () => ({} as any),
   getDocumentRef: () => ({} as any),
   setCouple: () => Promise.resolve(),
@@ -51,7 +54,8 @@ export const GuestsProvider = connect<TReduxProps, {}, {}, IRootReducer>(state =
   weddingId: state.activeWeddingId,
   currentPageNumber: state.guests.currentPageNumber,
   subscriptionPaths: state.subscriptions,
-  documentsDerivedBySubscribe: state.guests.subscribed
+  documentsDerivedBySubscribe: state.guests.subscribed,
+  hasMore: state.guests.hasMore
 }))(
   class GuestsProviderComponent extends Component<TReduxProps & DispatchProp> {
     listingSubscribedGuestIds: string[] = [];
@@ -96,37 +100,40 @@ export const GuestsProvider = connect<TReduxProps, {}, {}, IRootReducer>(state =
       };
     };
 
-    guestsListingWatch = () => {
-      const { dispatch, weddingId } = this.props;
-      const pageNumber = 1;
+    onGuestsSnapshot = (snap: firestore.QuerySnapshot<firestore.DocumentData>, pageNumber: number) => {
+      const { dispatch } = this.props;
+
+      snap.docChanges().forEach(({ doc, type }) => {
+        if (type === "added") {
+          dispatch(fetchGuestSuccess({ id: doc.id, ...(doc.data() as IGuest) }, true));
+          if (!this.listingSubscribedGuestIds.includes(doc.id)) {
+            this.listingSubscribedGuestIds.push(doc.id);
+          }
+        }
+        if (type === "modified") dispatch(updateGuestSuccess({ id: doc.id, ...(doc.data() as IGuest) }));
+        if (type === "removed") dispatch(deleteGuestSuccess(doc.id));
+      });
+      const order = snap.docs.map(doc => doc.id);
+      const hasMore = snap.docs.length === 21 * pageNumber;
+      dispatch(setCurrentQueryPage(pageNumber));
+      dispatch(setGuestsOrder(hasMore ? order.slice(0, order.length - 1) : order, hasMore));
+    };
+
+    loadMore = (pageNumber: number) => {
+      const { weddingId } = this.props;
+      const ref = this.getDbRef();
 
       if (this.unsubscribeGuestListingWatch) {
         this.unsubscribeGuestListingWatch();
       }
 
-      const ref = this.getDbRef();
       this.props.dispatch(subscribeToPath(ref.path));
 
       const unsubscribe = ref
         .where("weddingId", "==", weddingId)
         .orderBy("name", "asc")
         .limit(21 * pageNumber)
-        .onSnapshot(snap => {
-          snap.docChanges().forEach(({ doc, type }) => {
-            if (type === "added") {
-              dispatch(fetchGuestSuccess({ id: doc.id, ...(doc.data() as IGuest) }, true));
-              if (!this.listingSubscribedGuestIds.includes(doc.id)) {
-                this.listingSubscribedGuestIds.push(doc.id);
-              }
-            }
-            if (type === "modified") dispatch(updateGuestSuccess({ id: doc.id, ...(doc.data() as IGuest) }));
-            if (type === "removed") dispatch(deleteGuestSuccess(doc.id));
-          });
-          const order = snap.docs.map(doc => doc.id);
-          const hasMore = snap.docs.length === 21 * pageNumber;
-          dispatch(setCurrentQueryPage(pageNumber));
-          dispatch(setGuestsOrder(hasMore ? order.slice(0, order.length - 1) : order, hasMore));
-        });
+        .onSnapshot(snap => this.onGuestsSnapshot(snap, pageNumber));
 
       this.unsubscribeGuestListingWatch = () => {
         unsubscribe();
@@ -148,7 +155,8 @@ export const GuestsProvider = connect<TReduxProps, {}, {}, IRootReducer>(state =
         <GuestsContext.Provider
           value={{
             unsubscribeGuestListingWatch: this.unsubscribeGuestListingWatch,
-            guestsListingWatch: this.guestsListingWatch,
+            startWatch: () => (this.unsubscribeGuestListingWatch ? null : this.loadMore(1)),
+            loadMore: () => (this.props.hasMore ? this.loadMore(this.props.currentPageNumber + 1) : null),
             listenToDocumentRef: this.listenToDocumentRef,
             getDocumentRef: this.getDocumentRef,
             setCouple: (id1, id2) => this.guestCouple(id1, id2, true),

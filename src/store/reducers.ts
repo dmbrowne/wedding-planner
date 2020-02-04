@@ -1,6 +1,7 @@
 import { combineReducers } from "redux";
 import guestGroupsReducer, { IReducer as IGuestGroupReducer } from "./guest-groups";
 import guestsReducder, { IGuestsReducer } from "./guests-reducer";
+import eventsReducer, { IReducer as IEventReducer } from "./events";
 
 export interface IWedding {
   name: string;
@@ -21,6 +22,7 @@ export interface IRootReducer {
   activeWeddingId: string;
   guests: IGuestsReducer;
   subscriptions: ISubscriptionPaths;
+  events: IEventReducer;
 }
 
 export const setWeddingId = (id: string) => ({
@@ -70,7 +72,8 @@ const reducers = combineReducers({
   activeWeddingId: activeWeddingIdReducer,
   guestGroups: guestGroupsReducer,
   guests: guestsReducder,
-  subscriptions: pathSubscriptionsReducer
+  subscriptions: pathSubscriptionsReducer,
+  events: eventsReducer
 });
 
 export default reducers;

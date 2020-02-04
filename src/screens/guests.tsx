@@ -10,14 +10,14 @@ import GuestQuickView from "../components/guest-quick-view";
 import { IGuest } from "../store/types";
 
 const Guests: React.FC<RouteComponentProps> = ({ match }) => {
-  const { unsubscribeGuestListingWatch, guestsListingWatch, getDocumentRef } = useContext(GuestsContext);
+  const { unsubscribeGuestListingWatch, startWatch, getDocumentRef } = useContext(GuestsContext);
   const [guestQuickViewId, setGuestQuickViewId] = useState<string | void>();
   const guests = useStateSelector(allGuestsListingSelector);
 
   useEffect(() => {
     const alreadyWatching = !!unsubscribeGuestListingWatch;
     if (!alreadyWatching) {
-      guestsListingWatch();
+      startWatch();
     }
   }, []);
 
@@ -59,9 +59,7 @@ const Guests: React.FC<RouteComponentProps> = ({ match }) => {
       />
       {!!guestQuickViewId && (
         <Guest id={guestQuickViewId}>
-          {({ guest, fetching }) =>
-            !!guest && !fetching && <GuestQuickView guest={guest} onClose={() => setGuestQuickViewId()} />
-          }
+          {({ guest }) => <GuestQuickView guest={guest} onClose={() => setGuestQuickViewId()} />}
         </Guest>
       )}
     </>

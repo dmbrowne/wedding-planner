@@ -1,8 +1,9 @@
 import React from "react";
-import { Heading, Box, Text, Button } from "grommet";
+import { Heading, Box, Text, Button, BoxProps } from "grommet";
 import styled from "styled-components";
 import RoundedCard from "../components/rounded-card";
 import { AddCircle, LinkNext } from "grommet-icons";
+import { RouteComponentProps } from "react-router-dom";
 
 const Container = styled(Box).attrs({ vertical: "medium" })`
   display: block;
@@ -22,7 +23,42 @@ const SHorizontalScrollItem = styled<any>(Box).attrs({
   flex: 0 0 auto;
 `;
 
-const EventDetail = () => {
+type TSectionHeading = { title: string } & (
+  | { onClick?: () => void; buttonLabel?: string }
+  | { onClick: () => void; buttonLabel: string }
+);
+
+const SectionHeading: React.FC<TSectionHeading> = ({ title, onClick, buttonLabel, ...props }) => (
+  <Box as="header" direction="row" align="center" {...props}>
+    <Heading level={2} children={title} />
+    {!!onClick && (
+      <Box pad={{ top: "small", left: "small" }}>
+        <Button plain onClick={onClick}>
+          <Box direction="row" gap="xxsmall">
+            <Text color="brand" children={buttonLabel} />
+            <LinkNext color="brand" />
+          </Box>
+        </Button>
+      </Box>
+    )}
+  </Box>
+);
+
+const Section: React.FC<Omit<TSectionHeading, "title"> & BoxProps & { title?: string; titleProps?: BoxProps }> = ({
+  children,
+  title,
+  onClick,
+  buttonLabel,
+  titleProps,
+  ...props
+}) => (
+  <Box as="section" margin={{ horizontal: "medium", bottom: "medium" }} {...props}>
+    {title && <SectionHeading title={title} onClick={onClick} buttonLabel={buttonLabel} {...titleProps} />}
+    {children}
+  </Box>
+);
+
+const EventDetail: React.FC<RouteComponentProps> = ({ match, history }) => {
   const services = [
     { name: "Ceremony", date: new Date("April 24, 2020 13:00:00") },
     { name: "Dinner", date: new Date("April 24, 2020 16:00:00") },
@@ -32,8 +68,11 @@ const EventDetail = () => {
     <Container>
       <Heading level={1} margin={{ horizontal: "medium" }} children="The Wedding" />
 
-      <Box as="section" pad={{ horizontal: "medium" }}>
-        <Heading level={2} children="Guests" />
+      <Section
+        title="Guests"
+        onClick={() => history.push(`${match.url}/guestlist`)}
+        buttonLabel="View / edit guestlist"
+      >
         <Text as="p" margin={{ top: "0" }}>
           <Text size="large" as="span" children="64 " />
           Guests currently invited in total, including the bride and groom
@@ -50,16 +89,9 @@ const EventDetail = () => {
           <Text as="span" color="status-warning" children="20 " />
           Not confirmed
         </Text>
+      </Section>
 
-        <Button plain margin={{ top: "small" }}>
-          <Box pad={{ vertical: "small" }} direction="row" gap="xxsmall">
-            <Text color="brand" children="View / edit guestlist" />
-            <LinkNext color="brand" />
-          </Box>
-        </Button>
-      </Box>
-
-      <Box as="section">
+      <Section margin={{ vertical: "medium" }}>
         <Heading level={2} margin={{ horizontal: "medium" }} children="Services" />
         <SHorizontalScrollContainer>
           {services.map((service, idx) => (
@@ -81,20 +113,15 @@ const EventDetail = () => {
           </SHorizontalScrollItem>
           <Box width={{ min: "1px" }} />
         </SHorizontalScrollContainer>
-      </Box>
+      </Section>
 
-      <Box as="section">
-        <Box as="header" direction="row" align="center">
-          <Heading level={2} margin={{ horizontal: "medium" }} children="Nearby amenities" />
-          <Box pad={{ top: "small" }}>
-            <Button plain>
-              <Box pad={{ vertical: "small" }} direction="row" gap="xxsmall">
-                <Text color="brand" children="View all / edit amenities order" />
-                <LinkNext color="brand" />
-              </Box>
-            </Button>
-          </Box>
-        </Box>
+      <Section
+        titleProps={{ margin: { horizontal: "medium" } }}
+        margin={{ vertical: "medium" }}
+        title="Nearby amenities"
+        onClick={() => {}}
+        buttonLabel="View all / edit amenities order"
+      >
         <SHorizontalScrollContainer>
           {services.map((service, idx) => (
             <SHorizontalScrollItem first={idx === 0}>
@@ -115,7 +142,7 @@ const EventDetail = () => {
           </SHorizontalScrollItem>
           <Box width={{ min: "1px" }} />
         </SHorizontalScrollContainer>
-      </Box>
+      </Section>
     </Container>
   );
 };

@@ -10,10 +10,7 @@ export const QuickViewPartner: React.FC<{
   editMode: boolean;
 }> = ({ partnerId, onRemovePartner, editMode }) => (
   <Guest id={partnerId}>
-    {({ guest: partner, ready }) => {
-      if (!ready || !partner) {
-        return null;
-      }
+    {({ guest: partner }) => {
       return editMode ? (
         <Tag onDelete={onRemovePartner}>
           <Box direction="row" align="center">
