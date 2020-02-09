@@ -1,34 +1,67 @@
 import React, { useState } from "react";
-import { Table, TableHeader, TableRow, TableCell, Button, TableBody, Text, CheckBox, Grommet, Box } from "grommet";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableCell,
+  Button,
+  TableBody,
+  Text,
+  CheckBox,
+  Grommet,
+  Box,
+  InfiniteScroll
+} from "grommet";
 import { FormUp } from "grommet-icons";
 
 import { useStateSelector } from "../store/redux";
-import { eventGuestsSelector } from "../selectors";
 import GuestListAttendeeRow from "./guest-list-attendee-row";
 import GuestlistPlusOneRow from "./guestlist-plus-one-row";
-import { IGuest, IPlusOneGuest, IEvent, IEventGuest } from "../store/types";
+import { IPlusOneGuest, IEvent, IEventGuest } from "../store/types";
+import PlusOne from "./plus-one";
 
 interface IProps {
   event: IEvent;
   compactMode?: boolean;
-  onViewGuest: (guest: IGuest | IPlusOneGuest, isPlusOne?: boolean) => void;
+  onViewGuest?: (eventGuestId: string, isPlusOne?: boolean) => void;
   onRemoveGuest: (guestId: string, isPlusOne?: boolean) => void;
-  onAddPlusOne: (guestId: string) => void;
+  onAddPlusOne?: (guestId: string) => void;
   selectedRows: Set<string>;
   onSelectRows: (selected: Set<string>) => void;
+  hidePlusOnes?: boolean;
+  hideHeader?: boolean;
+  columns?: string[];
+  guests: IEventGuest[];
+  onLoadMore?: () => void;
 }
 
 const EventGuestListGuestsTable: React.FC<IProps> = props => {
-  const { compactMode, onViewGuest, onRemoveGuest, onAddPlusOne, selectedRows, onSelectRows, event } = props;
+  const {
+    compactMode,
+    onViewGuest,
+    onRemoveGuest,
+    onAddPlusOne,
+    selectedRows,
+    onSelectRows,
+    event,
+    onLoadMore
+  } = props;
   const tableHeaderProps = { scope: "col" as "col", background: "dark-1" };
-  const invitedGuests = useStateSelector(eventGuestsSelector);
   const plusOnes = useStateSelector(state => state.events.plusOnes);
   const eventGuests = useStateSelector(state => state.events.eventGuests);
   const [expandedRows, setExpandedRows] = useState(new Set());
   const totalRows = Object.keys(plusOnes).length + Object.keys(eventGuests).length;
   const isAllRowsSelected = selectedRows.size === totalRows;
 
-  const columns = ["checkbox", "expand", "attendance", "name", "plusOne", ...(!compactMode ? ["email"] : []), "remove"];
+  const columns = props.columns || [
+    "checkbox",
+    "expand",
+    "attendance",
+    "name",
+    "plusOne",
+    ...(!compactMode ? ["email"] : []),
+    "remove"
+  ];
 
   const toggleAll = () => {
     const updatedSet = new Set(selectedRows);
@@ -69,7 +102,7 @@ const EventGuestListGuestsTable: React.FC<IProps> = props => {
         const guest = eventGuests[id] || plusOnes[id];
         const attendance = getAttendance(guest);
         const color = getAttendanceColour(attendance);
-        return <Box round width="0" height="0" border={{ color, size: "large" }} />;
+        return <Box round width="0" height="0" border={{ color, size: "8px" }} />;
       }
       case "checkbox":
         return <CheckBox checked={selectedRows.has(id)} onChange={e => toggleGuestCheckbox(id, e.target.checked)} />;
@@ -118,87 +151,82 @@ const EventGuestListGuestsTable: React.FC<IProps> = props => {
 
   return (
     <>
-      <Box direction="row" margin={{ top: "medium" }} gap="small">
+      <Box direction="row" gap="small">
         <Text>Key:</Text>
-        <Box direction="row" gap="xxsmall" align="center">
-          <Box round border={{ color: getAttendanceColour("unresponded"), size: "large" }} />
-          <Text size="small" color="dark-3">
-            Not RSVP'd
-          </Text>
-        </Box>
-        <Box direction="row" gap="xxsmall" align="center">
-          <Box round border={{ color: getAttendanceColour("full"), size: "large" }} />
-          <Text size="small" color="dark-3">
-            Attending (all)
-          </Text>
-        </Box>
-        <Box direction="row" gap="xxsmall" align="center">
-          <Box round border={{ color: getAttendanceColour("partial"), size: "large" }} />
-          <Text size="small" color="dark-3">
-            Attending (some)
-          </Text>
-        </Box>
-        <Box direction="row" gap="xxsmall" align="center">
-          <Box round border={{ color: getAttendanceColour("none"), size: "large" }} />
-          <Text size="small" color="dark-3">
-            Not Attending (any)
-          </Text>
-        </Box>
+        {[
+          ["unresponded", "Not RSVP'd"],
+          ["full", "Attending (all)"],
+          ["partial", "Attending (some)"],
+          ["none", "Not Attending (any)"]
+        ].map(([status, text]) => (
+          <Box key={status} direction="row" gap="xxsmall" align="center">
+            <Box round border={{ color: getAttendanceColour(status as any), size: "8px" }} />
+            <Text size="small" color="dark-3" children={text} />
+          </Box>
+        ))}
       </Box>
       <Table style={{ width: "100%" }} margin={{ top: "small", bottom: "medium" }}>
-        <TableHeader>
-          <TableRow>
-            <TableCell {...tableHeaderProps}>
-              <Grommet
-                theme={{ checkBox: { border: { color: "light-6" }, hover: { border: { color: "light-1" } } } }}
-                children={<CheckBox checked={isAllRowsSelected} onChange={() => toggleAll()} />}
-              />
-            </TableCell>
-            <TableCell {...tableHeaderProps}>
-              <Button plain icon={<FormUp color="white" />} margin={{ right: "xxsmall" }} />
-            </TableCell>
-            <TableCell {...tableHeaderProps} size="xxsmall" children="" />
-            <TableCell {...tableHeaderProps} size="1/2" children="Name" />
-            <TableCell {...tableHeaderProps} size="xsmall" children="+1's" />
-            {!compactMode && <TableCell {...tableHeaderProps} size="1/3" children={<Text>Email</Text>} />}
-            <TableCell {...tableHeaderProps} size="xxsmall" children="" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {invitedGuests.map(invitedGuest => {
-            const plusOneRows = Array.isArray(invitedGuest.plusOnes)
-              ? invitedGuest.plusOnes.map((plusOneGuestId: string) => {
-                  if (!plusOnes[plusOneGuestId]) return null;
-                  return (
-                    <GuestlistPlusOneRow
-                      render={plusOneColumnRenderer.bind(undefined, plusOneGuestId)}
-                      show={expandedRows.has(invitedGuest.id)}
-                      key={plusOneGuestId}
-                      guest={plusOnes[plusOneGuestId]}
-                      cellOrder={columns}
-                      onClick={() => onViewGuest(plusOnes[plusOneGuestId], true)}
-                      onRemove={() => onRemoveGuest(plusOneGuestId, true)}
-                    />
-                  );
-                })
-              : null;
-            return (
-              <React.Fragment key={invitedGuest.id}>
-                <GuestListAttendeeRow
-                  render={colName => columnRenderer(invitedGuest.id, colName)}
-                  onExpand={plusOneRows ? () => toggleExpandedRow(invitedGuest.id) : undefined}
-                  expandIcon={expandedRows.has(invitedGuest.id) ? "up" : "down"}
-                  eventGuest={invitedGuest}
-                  guestId={invitedGuest.id}
-                  onAddPlusOne={() => onAddPlusOne(invitedGuest.id)}
-                  cellOrder={columns}
-                  onRemove={onRemoveGuest}
-                  onClick={guest => onViewGuest(guest, false)}
+        {!props.hideHeader && (
+          <TableHeader>
+            <TableRow>
+              <TableCell {...tableHeaderProps}>
+                <Grommet
+                  theme={{ checkBox: { border: { color: "light-6" }, hover: { border: { color: "light-1" } } } }}
+                  children={<CheckBox checked={isAllRowsSelected} onChange={() => toggleAll()} />}
                 />
-                {plusOneRows}
-              </React.Fragment>
-            );
-          })}
+              </TableCell>
+              <TableCell {...tableHeaderProps}>
+                <Button plain icon={<FormUp color="white" />} margin={{ right: "xxsmall" }} />
+              </TableCell>
+              <TableCell {...tableHeaderProps} size="xxsmall" children="" />
+              <TableCell {...tableHeaderProps} size="1/2" children="Name" />
+              <TableCell {...tableHeaderProps} size="xsmall" children="+1's" />
+              {!compactMode && <TableCell {...tableHeaderProps} size="1/3" children={<Text>Email</Text>} />}
+              <TableCell {...tableHeaderProps} size="xxsmall" children="" />
+            </TableRow>
+          </TableHeader>
+        )}
+        <TableBody>
+          <InfiniteScroll
+            items={props.guests}
+            onMore={onLoadMore}
+            renderMarker={marker => <tr children={<td>{marker}</td>} />}
+          >
+            {(invitedGuest: IEventGuest) => {
+              const plusOneRows =
+                Array.isArray(invitedGuest.plusOnes) && invitedGuest.plusOnes.length > 0 && !props.hidePlusOnes
+                  ? invitedGuest.plusOnes.map((plusOneGuestId: string) => (
+                      <PlusOne eventId={event.id} id={plusOneGuestId} subscribeWhileMounted key={plusOneGuestId}>
+                        {({ plusOneGuest }) => (
+                          <GuestlistPlusOneRow
+                            render={plusOneColumnRenderer.bind(undefined, plusOneGuestId)}
+                            show={expandedRows.has(invitedGuest.id)}
+                            key={plusOneGuestId}
+                            guest={plusOneGuest}
+                            cellOrder={columns}
+                            onRemove={() => onRemoveGuest(plusOneGuestId, true)}
+                          />
+                        )}
+                      </PlusOne>
+                    ))
+                  : null;
+              return (
+                <React.Fragment key={invitedGuest.id}>
+                  <GuestListAttendeeRow
+                    render={colName => columnRenderer(invitedGuest.id, colName)}
+                    onExpand={plusOneRows ? () => toggleExpandedRow(invitedGuest.id) : undefined}
+                    expandIcon={expandedRows.has(invitedGuest.id) ? "up" : "down"}
+                    eventGuest={invitedGuest}
+                    onAddPlusOne={onAddPlusOne ? () => onAddPlusOne(invitedGuest.id) : undefined}
+                    cellOrder={columns}
+                    onRemove={() => onRemoveGuest(invitedGuest.id)}
+                    onClick={onViewGuest ? () => onViewGuest(invitedGuest.id, false) : undefined}
+                  />
+                  {plusOneRows}
+                </React.Fragment>
+              );
+            }}
+          </InfiniteScroll>
         </TableBody>
       </Table>
     </>

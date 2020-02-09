@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import { Layer, Box, Button, Heading } from "grommet";
+import { Layer, Box, Button } from "grommet";
 import { Close } from "grommet-icons";
 import { Avatar } from "gestalt";
 import { IGuest } from "../store/types";
@@ -7,11 +7,10 @@ import EditBasicGuestDetails from "./edit-basic-guest-details";
 import { GuestsContext } from "./guests-context";
 import { QuickViewBasicDetails } from "./quick-view-basic-details";
 import { QuickViewPartnerSection } from "./quick-view-partner-section";
-import { QuickViewGroupsSection } from "./quick-view-groups-section";
 
 const GuestQuickView: React.FC<{ guest: IGuest; onClose: () => void }> = ({ guest, onClose }) => {
   const [editMode, setEditMode] = useState(false);
-  const { getDocumentRef, setCouple, unsetCouple, addToGroup, removeFromGroup } = useContext(GuestsContext);
+  const { getDocumentRef, setCouple, unsetCouple } = useContext(GuestsContext);
 
   const onEditSubmit = (values: Partial<IGuest>) => {
     getDocumentRef(guest.id).update(values);
@@ -32,13 +31,6 @@ const GuestQuickView: React.FC<{ guest: IGuest; onClose: () => void }> = ({ gues
         )}
         <Box as="section" height={{ min: "auto" }}>
           <QuickViewPartnerSection guest={guest} onRemoveCouple={unsetCouple} onAddCouple={setCouple} />
-        </Box>
-        <Box as="section" height={{ min: "auto" }}>
-          <QuickViewGroupsSection
-            onAddGroup={groupId => addToGroup(guest.id, groupId)}
-            onRemoveGroup={groupId => removeFromGroup(guest.id, groupId)}
-            guest={guest}
-          />
         </Box>
       </Box>
     </Layer>

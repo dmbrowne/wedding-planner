@@ -2,7 +2,7 @@ import React, { useEffect, useContext, useState } from "react";
 import { UserAdd, Trash } from "grommet-icons";
 import { Heading, Button, Box, DataTable } from "grommet";
 import { RouteComponentProps, Link } from "react-router-dom";
-import { allGuestsListingSelector } from "../selectors";
+import allGuestsListingSelector from "../selectors/all-guests-listing";
 import { useStateSelector } from "../store/redux";
 import { GuestsContext } from "../components/guests-context";
 import Guest from "../components/guest";
@@ -10,16 +10,11 @@ import GuestQuickView from "../components/guest-quick-view";
 import { IGuest } from "../store/types";
 
 const Guests: React.FC<RouteComponentProps> = ({ match }) => {
-  const { unsubscribeGuestListingWatch, startWatch, getDocumentRef } = useContext(GuestsContext);
+  const { loadMore, unsubscribe, getDocumentRef } = useContext(GuestsContext);
   const [guestQuickViewId, setGuestQuickViewId] = useState<string | void>();
   const guests = useStateSelector(allGuestsListingSelector);
 
-  useEffect(() => {
-    const alreadyWatching = !!unsubscribeGuestListingWatch;
-    if (!alreadyWatching) {
-      startWatch();
-    }
-  }, []);
+  useEffect(() => unsubscribe, []);
 
   const deleteGuest = (guest: IGuest) => {
     const shouldDelete = window.confirm(`Are you sure you want to delete ${guest.name}`);
@@ -35,6 +30,7 @@ const Guests: React.FC<RouteComponentProps> = ({ match }) => {
         <Button as="span" label="Add guest" icon={<UserAdd />} primary />
       </Link>
       <DataTable
+        onMore={loadMore}
         columns={[
           { property: "name", header: "Name" },
           { property: "email", header: "Email" },

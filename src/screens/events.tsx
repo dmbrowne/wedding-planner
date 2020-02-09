@@ -5,7 +5,7 @@ import { AddCircle } from "grommet-icons";
 import styled from "styled-components";
 import { RouteComponentProps } from "react-router-dom";
 import { useStateSelector } from "../store/redux";
-import { orderedEventsListSelector } from "../selectors";
+import { orderedEventsListSelector } from "../selectors/selectors";
 
 const SEventCard = styled(RoundedCard).attrs({
   hoverIndicator: "light-1",

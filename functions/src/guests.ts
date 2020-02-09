@@ -10,27 +10,6 @@ export const modifyAlgoliaGuest = functions.firestore.document("guests/{guestId}
   });
 });
 
-export const removeGroupIdFromGuestOnGroupDelete = functions.firestore
-  .document("guestGroups/{groupId}")
-  .onDelete(snap => {
-    const { members } = snap.data() as { members?: string[] };
-    const updates = members
-      ? members.map(guestId => {
-          const ref = admin.firestore().doc(`guests/${guestId}`);
-          return admin.firestore().runTransaction(function(transaction) {
-            return transaction.get(ref).then(doc => {
-              if (!doc.exists) {
-                return Promise.resolve();
-              }
-              transaction.update(ref, { groupIds: admin.firestore.FieldValue.arrayRemove(snap.id) });
-              return Promise.resolve();
-            });
-          });
-        })
-      : [Promise.resolve()];
-    return Promise.all(updates);
-  });
-
 export const updatePartnerOnGuestCreateOrDelete = functions.firestore
   .document("guests/{guestId}")
   .onWrite(async ({ before, after }) => {
@@ -59,4 +38,22 @@ export const updatePartnerOnGuestCreateOrDelete = functions.firestore
     } catch (e) {
       return e;
     }
+  });
+
+export const updateEventGuestNameOnGuestNameChange = functions.firestore
+  .document("guests/{guestId}")
+  .onUpdate((change, { params }) => {
+    const newName = (change.after.data() as any).name;
+    const db = admin.firestore();
+    if ((change.before.data() as any).name === newName) return true;
+
+    return db
+      .collection("eventGuests")
+      .where("guestId", "==", params.guestId)
+      .get()
+      .then(snap => {
+        const batch = db.batch();
+        snap.docs.forEach(doc => batch.update(doc.ref, { name: newName }));
+        return batch.commit();
+      });
   });

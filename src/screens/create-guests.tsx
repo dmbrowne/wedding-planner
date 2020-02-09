@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Heading, Box, Button, Table, TableBody, Layer } from "grommet";
 import shortId from "shortid";
-import { Trash, Group } from "grommet-icons";
+import { Trash } from "grommet-icons";
 import { useDispatch } from "react-redux";
 import * as yup from "yup";
 import { ReactComponent as CoupleIcon } from "../icons/couple.svg";
@@ -10,10 +10,6 @@ import useNewGuestsReducer, { INewGuest } from "../store/use-new-guests-reducer"
 import FileInput from "../components/file-input";
 import CreateNewGuestRow from "../components/create-new-guest-row";
 import { addNewGuests } from "../store/guests-actions";
-import { IGuest } from "../store/types";
-import { createGuestGroups } from "../store/guest-groups";
-import AddToGroup from "../components/add-to-group";
-import { IGuestGroup } from "../store/guest-groups";
 import AddPartner from "../components/add-partner";
 import { RouteChildrenProps } from "react-router-dom";
 
@@ -25,10 +21,9 @@ const validationSchema = yup.object().shape({
 
 const NewGuests: React.FC<RouteChildrenProps<{ weddingId: string }>> = ({ history, match }) => {
   const dispatch = useDispatch();
-  const { byId, newGroups, guests, checkedGuests, actions, checkedList } = useNewGuestsReducer();
+  const { byId, guests, checkedGuests, actions, checkedList } = useNewGuestsReducer();
   const [isValid, setIsValid] = useState(false);
-  const [partner, setpartner] = useState<INewGuest | undefined>(undefined);
-  const [modalType, setModalType] = useState<"group" | "partner" | "">("");
+  const [modalPartner, setModalPartner] = useState<INewGuest | void>();
 
   useEffect(() => {
     if (guests.length === 1) {
@@ -83,32 +78,18 @@ const NewGuests: React.FC<RouteChildrenProps<{ weddingId: string }>> = ({ histor
   };
 
   const addGuests = () => {
-    dispatch(createGuestGroups(Object.values(newGroups)));
     dispatch(addNewGuests(guests.slice(0, guests.length - 1)));
     history.push(`/wedding/${match?.params.weddingId}/guests`);
   };
 
   const onSelectPartner = (guestId: string) => {
-    if (partner) {
-      actions.linkCouple(partner.id, guestId);
+    if (modalPartner) {
+      actions.linkCouple(modalPartner.id, guestId);
       closeModal();
     }
   };
 
-  const onSelectGroup = (groupId: string) => {
-    if (partner) {
-      if (partner.groupIds && partner.groupIds.includes(groupId)) {
-        actions.removeGuestFromGroup(partner.id, groupId);
-      } else {
-        actions.addGuestToGroup(partner.id, groupId);
-      }
-    }
-  };
-
-  const closeModal = () => {
-    setModalType("");
-    setpartner(undefined);
-  };
+  const closeModal = () => setModalPartner();
 
   return (
     <>
@@ -119,7 +100,6 @@ const NewGuests: React.FC<RouteChildrenProps<{ weddingId: string }>> = ({ histor
       <Box direction="row" margin={{ bottom: "medium" }}>
         <Button onClick={onRemove} icon={<Trash />} disabled={checkedList.length < 1} />
         <Button disabled={checkedList.length !== 2} icon={<CoupleIcon style={{ height: 24 }} />} onClick={() => {}} />
-        <Button disabled={checkedList.length < 2} icon={<Group />} onClick={() => {}} />
       </Box>
       <Table>
         <TableBody>
@@ -127,30 +107,16 @@ const NewGuests: React.FC<RouteChildrenProps<{ weddingId: string }>> = ({ histor
             <CreateNewGuestRow
               key={`new-guest-${newGuest.id}`}
               getNewGuestById={id => byId[id]}
-              getNewGroupById={id => newGroups[id]}
               guest={newGuest}
               checkIsDisabled={idx === arr.length - 1}
               isChecked={!!checkedGuests[newGuest.id]}
               onCheck={() => setChecked(newGuest.id)}
               onChange={(e, fieldName, id) => updateGuest(fieldName, id)(e)}
-              onAddNewPartner={() => {
-                setpartner(newGuest);
-                setModalType("partner");
-              }}
+              onAddNewPartner={() => setModalPartner(newGuest)}
               onRemovePartner={partner => {
                 const shouldRemove = window.confirm("Remove partnership?");
                 if (shouldRemove) {
                   actions.unlinkCouple(newGuest.id, partner.id);
-                }
-              }}
-              onAddGroup={() => {
-                setModalType("group");
-                setpartner(newGuest);
-              }}
-              onRemoveGroup={group => {
-                const shouldRemove = window.confirm("Remove from group?");
-                if (shouldRemove) {
-                  actions.removeGuestFromGroup(newGuest.id, group.id);
                 }
               }}
               validate={idx !== arr.length - 1}
@@ -161,28 +127,15 @@ const NewGuests: React.FC<RouteChildrenProps<{ weddingId: string }>> = ({ histor
       <Box align="start" justify="end" margin="medium" direction="row" gap="medium">
         <Button primary label="Add" onClick={addGuests} disabled={!isValid} />
       </Box>
-      {!!modalType && !!partner && (
+      {!!modalPartner && (
         <Layer onClickOutside={closeModal} onEsc={closeModal}>
           <Box pad="large" width={{ min: "650px" }} height={{ min: "400px" }} justify="between">
             <Box>
-              {modalType === "partner" && (
-                <AddPartner
-                  onSelectPartner={({ id }) => onSelectPartner(id)}
-                  unsavedGuests={guests.slice(0, guests.length - 1).filter(newGuests => newGuests.id !== partner.id)}
-                  hideGuests={[partner.id]}
-                />
-              )}
-              {modalType === "group" && (
-                <AddToGroup
-                  onSelect={({ id }) => onSelectGroup(id)}
-                  unsavedGroups={Object.values(newGroups)}
-                  selectedIds={partner && partner.groupIds}
-                  onCreateNewGroup={name => {
-                    actions.addNewGroup({ name, members: [partner.id] });
-                    closeModal();
-                  }}
-                />
-              )}
+              <AddPartner
+                onSelectPartner={({ id }) => onSelectPartner(id)}
+                unsavedGuests={guests.slice(0, guests.length - 1).filter(newGuests => newGuests.id !== modalPartner.id)}
+                hideGuests={[modalPartner.id]}
+              />
             </Box>
             <Button label="close" onClick={closeModal} margin={{ top: "medium" }} alignSelf="end" />
           </Box>

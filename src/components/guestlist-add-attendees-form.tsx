@@ -1,26 +1,22 @@
-import React, { useContext, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Box, Button, Text, Heading, InfiniteScroll } from "grommet";
 import { Close } from "grommet-icons";
-import { GuestsContext } from "./guests-context";
 import { useStateSelector } from "../store/redux";
-import { allGuestsListingSelector, uninvitedEventGuestsSelector } from "../selectors";
+import { uninvitedEventGuestsSelector } from "../selectors/selectors";
+import { IGuest } from "../store/types";
 
 interface IProps {
+  onLoadMore: () => void;
+  loadAllGuests: () => void;
   onClose: () => void;
-  onAdd: (guestId: string) => void;
+  onAdd: (guest: IGuest) => void;
 }
 
-const GuestlistAddAttendeesForm: React.FC<IProps> = ({ onClose, onAdd }) => {
-  const { loadMore, startWatch, unsubscribeGuestListingWatch } = useContext(GuestsContext);
+const GuestlistAddAttendeesForm: React.FC<IProps> = ({ onClose, onAdd, loadAllGuests, onLoadMore }) => {
   const uninvitedGuests = useStateSelector(uninvitedEventGuestsSelector);
-  const guests = useStateSelector(allGuestsListingSelector);
-  const hasMore = useStateSelector(state => state.guests.hasMore);
 
   useEffect(() => {
-    const alreadyWatching = !!unsubscribeGuestListingWatch;
-    if (!alreadyWatching) {
-      startWatch();
-    }
+    loadAllGuests();
   }, []);
 
   return (
@@ -39,20 +35,14 @@ const GuestlistAddAttendeesForm: React.FC<IProps> = ({ onClose, onAdd }) => {
           overflow="auto"
           style={{ display: "block" }}
         >
-          {!!guests.length ? (
-            <InfiniteScroll items={uninvitedGuests} onMore={hasMore ? loadMore : undefined}>
-              {guest => (
-                <Box
-                  pad="small"
-                  hoverIndicator="light-1"
-                  // background={idx % 2 ? "light-1" : "transparent"}
-                  onClick={() => onAdd(guest.id)}
-                >
-                  <Text>{guest.name}</Text>
-                </Box>
-              )}
-            </InfiniteScroll>
-          ) : (
+          <InfiniteScroll items={uninvitedGuests} onMore={onLoadMore}>
+            {(guest: IGuest) => (
+              <Box key={guest.id} pad="small" hoverIndicator="light-1" onClick={() => onAdd(guest)}>
+                <Text>{guest.name}</Text>
+              </Box>
+            )}
+          </InfiniteScroll>
+          {!uninvitedGuests.length && (
             <Box fill justify="center">
               <Text
                 color="dark-2"

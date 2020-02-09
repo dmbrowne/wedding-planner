@@ -12,7 +12,7 @@ import { IGuest } from "../store/types";
 import { Button as GestaltButton, Pulsar } from "gestalt";
 import RoundedCard from "../components/rounded-card";
 
-type TBrideOrGroom = Omit<IGuest, "fetching" | "id" | "weddingId">;
+type TBrideOrGroom = Omit<IGuest, "id" | "weddingId">;
 
 const Listing = styled.div`
   display: grid;

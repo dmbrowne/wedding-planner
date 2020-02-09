@@ -5,16 +5,12 @@ import {
   fetchEventSuccess,
   updateEventSuccess,
   deleteEventSuccess,
-  fetchEventGuestSuccess,
-  updateEventGuestSuccess,
-  deleteEventGuestSuccess,
   fetchPlusOneSuccess,
   updatePlusOneSuccess,
   deletePlusOneSuccess,
-  applyGuestListingOrder,
   applyEventListingOrder
 } from "../store/events";
-import { IEvent, IEventGuest, IPlusOneGuest } from "../store/types";
+import { IEvent, IPlusOneGuest } from "../store/types";
 import { useStateSelector } from "../store/redux";
 
 const EventsWatcher: React.FC<{ weddingId: string }> = ({ weddingId, children }) => {
@@ -32,33 +28,6 @@ const EventsWatcher: React.FC<{ weddingId: string }> = ({ weddingId, children })
           if (type === "added") dispatch(fetchEventSuccess({ id: doc.id, ...(doc.data() as IEvent) }));
           if (type === "modified") dispatch(updateEventSuccess({ id: doc.id, ...(doc.data() as IEvent) }));
           if (type === "removed") dispatch(deleteEventSuccess(doc.id));
-        });
-      });
-
-    return unsubscribe;
-  }, []);
-
-  return <>{children}</>;
-};
-
-export const EventGuestsWatcher: React.FC<{ eventId: string }> = ({ eventId, children }) => {
-  const dispatch = useDispatch();
-  const weddingId = useStateSelector(state => state.activeWeddingId);
-
-  useEffect(() => {
-    const unsubscribe = firebase
-      .firestore()
-      .collection("events")
-      .doc(eventId)
-      .collection("guests")
-      .where("weddingId", "==", weddingId)
-      .onSnapshot(snap => {
-        const order = snap.docs.map(({ id }) => id);
-        dispatch(applyGuestListingOrder(order));
-        snap.docChanges().forEach(({ doc, type }) => {
-          if (type === "added") dispatch(fetchEventGuestSuccess({ id: doc.id, ...(doc.data() as IEventGuest) }));
-          if (type === "modified") dispatch(updateEventGuestSuccess({ id: doc.id, ...(doc.data() as IEventGuest) }));
-          if (type === "removed") dispatch(deleteEventGuestSuccess(doc.id));
         });
       });
 

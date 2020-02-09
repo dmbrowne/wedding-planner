@@ -1,30 +1,25 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { TableRow, TableCell, Box, CheckBox, FormField, TextInput, ThemeContext, Button, Text } from "grommet";
 import styled from "styled-components";
-import { Group, Add } from "grommet-icons";
 import * as yup from "yup";
-import { Formik, Field, FormikErrors } from "formik";
+import { Formik, Field } from "formik";
 
-import { INewGuest, INewGuestGroup } from "../store/use-new-guests-reducer";
+import { INewGuest } from "../store/use-new-guests-reducer";
 import { ReactComponent as CoupleIcon } from "../icons/couple.svg";
 import { useStateSelector } from "../store/redux";
 import { fetchGuest } from "../store/guests-actions";
 import { IGuest } from "../store/types";
-import { IGuestGroup } from "../store/guest-groups";
 import { useDispatch } from "react-redux";
 
 interface IProps {
   guest: INewGuest;
   partner?: INewGuest | IGuest;
-  groups?: IGuestGroup[];
   checkIsDisabled?: boolean;
   isChecked?: boolean;
   onCheck: (guestId: string) => any;
   onChange: (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof INewGuest, id: string) => any;
   onAddNewPartner?: () => any;
   onRemovePartner?: () => any;
-  onAddGroup?: () => any;
-  onRemoveGroup?: (group: IGuestGroup) => any;
   validate?: boolean;
 }
 
@@ -52,9 +47,6 @@ export const CreateNewGuestRowComponent: React.FC<IProps> = ({
   partner,
   onAddNewPartner,
   onRemovePartner,
-  groups,
-  onRemoveGroup,
-  onAddGroup,
   validate
 }) => {
   return (
@@ -136,41 +128,20 @@ export const CreateNewGuestRowComponent: React.FC<IProps> = ({
                     </FormField>
                   )}
                 </Field>
-                <Box align="start" direction="row" wrap gap="small" margin={{ top: "small" }}>
-                  {guest.partnerId ? (
-                    <Button plain onClick={onRemovePartner}>
-                      <Box pad="small" direction="row" gap="xsmall" background="accent-2">
-                        <CoupleIcon color="#fff" style={{ height: 24 }} />
-                        <Text color="white">{(partner && partner.name) || guest.partnerId}</Text>
-                      </Box>
-                    </Button>
-                  ) : (
-                    <Button active onClick={onAddNewPartner}>
-                      <Box direction="row" pad="small">
-                        <CoupleIcon style={{ height: 24 }} />
-                      </Box>
-                    </Button>
-                  )}
-                  {groups &&
-                    groups.map(group => (
-                      <Button key={group.id} plain onClick={() => onRemoveGroup && onRemoveGroup(group)}>
-                        <Box pad="small" direction="row" gap="xsmall" background="accent-4">
-                          <Group color="#fff" />
-                          <Text color="white">{group.name}</Text>
-                        </Box>
-                      </Button>
-                    ))}
-                  <Button
-                    active
-                    icon={
-                      <Box direction="row">
-                        <Group />
-                        <Add size="small" />
-                      </Box>
-                    }
-                    onClick={onAddGroup}
-                  />
-                </Box>
+                {guest.partnerId ? (
+                  <Button alignSelf="start" plain onClick={onRemovePartner}>
+                    <Box pad="small" direction="row" gap="xsmall" background="accent-2">
+                      <CoupleIcon color="#fff" style={{ height: 24 }} />
+                      <Text color="white">{(partner && partner.name) || guest.partnerId}</Text>
+                    </Box>
+                  </Button>
+                ) : (
+                  <Button alignSelf="start" active onClick={onAddNewPartner}>
+                    <Box direction="row" pad="small">
+                      <CoupleIcon style={{ height: 24 }} />
+                    </Box>
+                  </Button>
+                )}
               </Box>
             </TableCell>
           </TableRow>
@@ -182,33 +153,12 @@ export const CreateNewGuestRowComponent: React.FC<IProps> = ({
 
 interface ICreateNewGuestRowProps extends Omit<IProps, "onRemovePartner"> {
   getNewGuestById: (id: string) => INewGuest | IGuest;
-  getNewGroupById: (id: string) => IGuestGroup;
   onRemovePartner?: (guest: IGuest) => any;
 }
 
-const CreateNewGuestRow: React.FC<ICreateNewGuestRowProps> = ({
-  getNewGuestById,
-  getNewGroupById,
-  onRemovePartner,
-  ...props
-}) => {
+const CreateNewGuestRow: React.FC<ICreateNewGuestRowProps> = ({ getNewGuestById, onRemovePartner, ...props }) => {
   const dispatch = useDispatch();
   const savedGuests = useStateSelector(state => state.guests.byId);
-  const savedGroups = useStateSelector(state => state.guestGroups.byId);
-  const [groups, setGroups] = useState<IGuestGroup[] | undefined>(undefined);
-
-  const getGroups = (ids: string[]) => {
-    ids.forEach(id => {
-      const group = getNewGroupById(id) || savedGroups[id];
-      if (!group) {
-        setGroups([...(groups || []), { id, fetching: true } as IGuestGroup]);
-        return;
-      }
-      if (!groups || groups.findIndex(retrievedGroup => retrievedGroup.id === group.id) === -1) {
-        setGroups([...(groups || []), group]);
-      }
-    });
-  };
 
   useEffect(() => {
     const partnerId = props.guest.partnerId;
@@ -216,14 +166,6 @@ const CreateNewGuestRow: React.FC<ICreateNewGuestRowProps> = ({
       dispatch(fetchGuest(partnerId));
     }
   });
-
-  useEffect(() => {
-    if (props.guest.groupIds && !!props.guest.groupIds.length) {
-      getGroups(props.guest.groupIds);
-    } else {
-      setGroups(undefined);
-    }
-  }, [props.guest.groupIds]);
 
   const partner = props.guest.partnerId
     ? getNewGuestById(props.guest.partnerId) || savedGuests[props.guest.partnerId]
@@ -233,7 +175,6 @@ const CreateNewGuestRow: React.FC<ICreateNewGuestRowProps> = ({
     <CreateNewGuestRowComponent
       {...props}
       partner={partner}
-      groups={groups}
       onRemovePartner={onRemovePartner ? () => onRemovePartner(partner as IGuest) : undefined}
     />
   );

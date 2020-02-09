@@ -1,173 +1,151 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 
-export const deletePlusOnesOnEventGuestDelete = functions.firestore
-  .document("events/{eventId}/guests/{guestId}")
-  .onDelete((snap, { params }) => {
-    const data = snap.data() as any;
-    if (!data.plusOnes) return;
+const eventGuestCountKey = "numberOfGuests";
 
-    const db = admin.firestore();
-    const batch = db.batch();
-    data.plusOnes.forEach((id: string) => {
-      const ref = db.doc(`events/${params.eventId}/plusOnes/${id}`);
-      batch.delete(ref);
+async function changeRsvpsToObject(
+  guestsAndPlusOnes: Promise<admin.firestore.QuerySnapshot<admin.firestore.DocumentData>[]>,
+  serviceIds: string[]
+) {
+  const updates = await guestsAndPlusOnes.then(([eventGuestQuerySnap, plusOneQuerySnap]) => {
+    return [...eventGuestQuerySnap.docs, ...plusOneQuerySnap.docs].map(snap => {
+      const rsvpVal = snap.data().rsvp;
+      return snap.ref.update({
+        rsvp: serviceIds.reduce(
+          (accum, serviceId) => ({ ...accum, [serviceId]: !!rsvpVal }),
+          {} as { [serviceId: string]: boolean }
+        )
+      });
     });
-
-    return batch.commit();
   });
+  return Promise.all(updates);
+}
 
-export const removePlusOneFromGuestOnPlusOneDelete = functions.firestore
-  .document("events/{eventId}/plusOnes/{plusOneId}")
-  .onDelete((snap, { params }) => {
-    const { guestId } = snap.data() as any;
-    if (guestId) {
-      return admin
-        .firestore()
-        .doc(`events/${params.eventId}/guests/${guestId}`)
-        .update({
-          plusOnes: admin.firestore.FieldValue.arrayRemove(snap.id)
-        });
-    }
-    return true;
+async function changeRsvpsToSingleBoolean(
+  guestsAndPlusOnes: Promise<admin.firestore.QuerySnapshot<admin.firestore.DocumentData>[]>
+) {
+  const updates = await guestsAndPlusOnes.then(([eventGuestQuerySnap, plusOneQuerySnap]) => {
+    return [...eventGuestQuerySnap.docs, ...plusOneQuerySnap.docs].map(snap => {
+      const rsvpVal = snap.data().rsvp as { [serviceId: string]: boolean } | boolean | undefined;
+      const isAttending = typeof rsvpVal === "object" && Object.values(rsvpVal).some(attending => !!attending);
+      return snap.ref.update({ rsvp: isAttending });
+    });
   });
+  return Promise.all(updates);
+}
 
-export const updateRsvpsOnChangeEventType = functions.firestore
+async function removeDeletedServiceRsvps(
+  guestsAndPlusOnes: Promise<admin.firestore.QuerySnapshot<admin.firestore.DocumentData>[]>,
+  beforeServicesIds: string[],
+  afterServicesIds: string[]
+) {
+  const removedServiceIds = beforeServicesIds.filter(x => !afterServicesIds.includes(x));
+  return await guestsAndPlusOnes.then(([eventGuestQuerySnap, plusOneQuerySnap]) => {
+    return [...eventGuestQuerySnap.docs, ...plusOneQuerySnap.docs].map(snap => {
+      const data = snap.data();
+      if (typeof data.rsvp === "undefined") return Promise.resolve();
+      if (typeof data.rsvp === "boolean") return snap.ref.update({ rsvp: null });
+      if (typeof data.rsvp === "object")
+        return Promise.all(removedServiceIds.map(serviceId => snap.ref.update({ [`rsvp.${serviceId}`]: null })));
+      return Promise.resolve();
+    });
+  });
+}
+
+export const updateGuestRsvpsOnEventServiceChange = functions.firestore
   .document("events/{eventId}")
   .onUpdate(async ({ before, after }, { params }) => {
-    const afterServices: { [serviceId: string]: Object } = (after.data() as any).services;
-    const changedToMulti = !(before.data() as any).services && afterServices;
-    const changedToSingle = (before.data() as any).services && !afterServices;
-    const isAnUpdate = (before.data() as any).services && afterServices;
+    const db = admin.firestore();
+    const beforeServices = (before.data() as { services?: { [serviceId: string]: Object } }).services;
+    const afterServices = (after.data() as { services?: { [serviceId: string]: Object } }).services;
+
+    if (beforeServices === afterServices) {
+      return true;
+    }
+
+    const changedToMulti = !beforeServices && !!afterServices;
+    const changedToSingle = !!beforeServices && !afterServices;
+    const isAnUpdate = !!beforeServices && afterServices;
 
     const guestsAndPlusOnes = Promise.all([
-      admin
-        .firestore()
-        .collection(`events/${params.eventId}/guests`)
+      db
+        .collection(`eventsGuests`)
+        .where("eventId", "==", params.eventId)
         .get(),
-      admin
-        .firestore()
-        .collection(`events/${params.eventId}/plusOnes`)
-        .get()
+      db.collection(`events/${params.eventId}/plusOnes`).get()
     ]);
 
-    if (changedToMulti) {
-      const serviceIds = Object.keys(afterServices);
-      const updates = await guestsAndPlusOnes.then(([guestQuerySnap, plusOneQuerySnap]) => {
-        return [...guestQuerySnap.docs, ...plusOneQuerySnap.docs].map(snap => {
-          const rsvpVal = snap.data().rsvp;
-          return snap.ref.update({
-            rsvp: serviceIds.reduce(
-              (accum, serviceId) => ({ ...accum, [serviceId]: !!rsvpVal }),
-              {} as { [serviceId: string]: boolean }
-            )
-          });
-        });
-      });
-      return Promise.all(updates);
+    if (changedToMulti && afterServices) {
+      return changeRsvpsToObject(guestsAndPlusOnes, Object.keys(afterServices));
     }
 
     if (changedToSingle) {
-      const updates = await guestsAndPlusOnes.then(([guestQuerySnap, plusOneQuerySnap]) => {
-        return [...guestQuerySnap.docs, ...plusOneQuerySnap.docs].map(snap => {
-          const rsvpVal = snap.data().rsvp as { [serviceId: string]: boolean } | undefined;
-          const isAttending = rsvpVal && Object.entries(rsvpVal).some(([, attending]) => !!attending);
-          return snap.ref.update({ rsvp: isAttending });
-        });
-      });
-      return Promise.all(updates);
+      return changeRsvpsToSingleBoolean(guestsAndPlusOnes);
     }
 
-    if (isAnUpdate) {
-      const existingServiceIds = Object.keys((before.data() as any).services as { [serviceId: string]: Object }).filter(
-        id => afterServices[id]
-      );
-      const updates = await guestsAndPlusOnes.then(([guestQuerySnap, plusOneQuerySnap]) => {
-        return [...guestQuerySnap.docs, ...plusOneQuerySnap.docs].map(snap => {
-          const data = snap.data();
-          const rsvp =
-            data.rsvp && typeof data.rsvp === "object"
-              ? existingServiceIds.reduce(
-                  (accum, serviceId) => ({
-                    ...accum,
-                    [serviceId]: !!data.rsvp[serviceId]
-                  }),
-                  {} as { [serviceId: string]: Object }
-                )
-              : {};
-          return snap.ref.update({ rsvp });
-        });
-      });
-      return Promise.all(updates);
+    if (isAnUpdate && beforeServices && afterServices) {
+      const beforeServicesIds = Object.keys(beforeServices);
+      const afterServicesIds = Object.keys(afterServices);
+      return removeDeletedServiceRsvps(guestsAndPlusOnes, beforeServicesIds, afterServicesIds);
     }
 
     return true;
   });
 
-export const createPartnerGroupOnEventGuestAdd = functions.firestore
-  .document("events/{eventId}/guests/{guestId}")
-  .onCreate(async (snap, { params }) => {
-    const db = admin.firestore();
-    const eventGuest = snap.data() as any;
-
-    if (eventGuest.plusOnes) return;
-
-    const guestSnap = await db.doc(`guests/${params.guestId}`).get();
-    const guest = guestSnap.data() as any;
-
-    if (!guest.partnerId) return;
-
-    const eventGuestPartner = await db.doc(`events/${params.eventId}/guests/${guest.partnerId}`).get();
-
-    if (!eventGuestPartner.exists) return;
-
-    const group = {
-      memberIds: [eventGuest.id, eventGuestPartner.id],
-      partnerGroup: true
-    };
-
-    const batch = db.batch();
-    const newGroupRef = db.collection(`events/${params.eventId}/guestGroups`).doc();
-    batch.set(newGroupRef, group);
-    batch.update(snap.ref, { groupId: newGroupRef.id });
-    batch.update(eventGuestPartner.ref, { groupId: newGroupRef.id });
-    return batch.commit();
-  });
-
-export const removePartnerGroupOnEventGuestDelete = functions.firestore
-  .document("events/{eventId}/guests/{guestId}")
+export const removeMemberIdFromGroupOnEventGuestDelete = functions.firestore
+  .document("eventGuests/{eventGuestId}")
   .onDelete(async (snap, { params }) => {
     const db = admin.firestore();
     const eventGuest = snap.data() as any;
 
-    if (!eventGuest.groupId) return;
+    if (!eventGuest.groupId) return false;
 
-    const groupSnapshot = await db.doc(`events/${params.eventId}/guestGroups/${eventGuest.groupId}`).get();
-    const group = groupSnapshot.data() as any;
+    const { eventId, groupId } = snap.data() as any;
+    const groupSnapshot = await db.doc(`events/${eventId}/guestGroups/${groupId}`).get();
 
-    if (!groupSnapshot.exists) return;
+    if (!groupSnapshot.exists) return false;
 
-    if (group.partnerGroup) {
-      return groupSnapshot.ref.delete();
+    return groupSnapshot.ref.update({ memberIds: admin.firestore.FieldValue.arrayRemove(params.eventGuestId) });
+  });
+
+export const updateEventTotalGuestsCountOnEventGuestChange = functions.firestore
+  .document("/eventGuests/{eventGuestId}")
+  .onWrite(change => {
+    const eventRef = (eventId: string) => admin.firestore().doc(`events/${eventId}`);
+
+    if (!change.before.exists) {
+      // New document Created : add one to count
+      const { eventId } = change.after.data() as any;
+      return eventRef(eventId).update({ [eventGuestCountKey]: admin.firestore.FieldValue.increment(1) });
+    } else if (change.before.exists && change.after.exists) {
+      // Updating existing document : Do nothing
+    } else if (!change.after.exists) {
+      // Deleting document : subtract one from count
+      const { eventId } = change.after.data() as any;
+      return eventRef(eventId).update({ [eventGuestCountKey]: admin.firestore.FieldValue.increment(-1) });
     }
-
-    return;
+    return true;
   });
 
-export const cleanUpGroupIdFieldsOnGroupDelete = functions.firestore
-  .document("events/{eventId}/guestsGroups/{groupId}")
-  .onDelete(async (snap, { params }) => {
-    const db = admin.firestore();
-    const group = snap.data() as any;
+export const updateEventTotalGuestsCountOnPlusOneChange = functions.firestore
+  .document("/events/{eventId}/plusOnes/{plusOneId}")
+  .onWrite((change, { params }) => {
+    const eventRef = admin.firestore().doc(`events/${params.eventId}`);
 
-    if (group.memberIds && Array.isArray(group.memberIds)) {
-      const batch = db.batch();
-      group.memberIds.forEach((memberId: string) => {
-        const ref = db.doc(`events/${params.eventId}/guests/${memberId}`);
-        batch.update(ref, { groupId: null });
+    if (!change.before.exists) {
+      // New document Created : add one to count
+      return eventRef.update({
+        [eventGuestCountKey]: admin.firestore.FieldValue.increment(1),
+        numberOfPlusOnes: admin.firestore.FieldValue.increment(1)
       });
-      return batch.commit();
+    } else if (change.before.exists && change.after.exists) {
+      // Updating existing document : Do nothing
+    } else if (!change.after.exists) {
+      // Deleting document : subtract one from count
+      return eventRef.update({
+        [eventGuestCountKey]: admin.firestore.FieldValue.increment(-1),
+        numberOfPlusOnes: admin.firestore.FieldValue.increment(-1)
+      });
     }
-
-    return;
+    return true;
   });

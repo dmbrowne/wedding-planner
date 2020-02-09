@@ -7,7 +7,13 @@ export interface IReducer {
   eventsOrder: string[];
   eventGuestOrder: string[];
   eventGuests: {
-    [guestId: string]: IEventGuest;
+    [eventGuestId: string]: IEventGuest;
+  };
+  eventGuestsByGuestId: {
+    [guestId: string]: string;
+  };
+  eventGuestsByEventId: {
+    [eventId: string]: string[];
   };
   plusOnes: {
     [id: string]: IPlusOneGuest;
@@ -98,6 +104,8 @@ const initalState: IReducer = {
   eventsOrder: [],
   eventsById: {},
   eventGuests: {},
+  eventGuestsByGuestId: {},
+  eventGuestsByEventId: {},
   plusOnes: {}
 };
 
@@ -129,14 +137,33 @@ export default function eventsReducer(state: IReducer = initalState, action: TAc
         eventGuests: {
           ...state.eventGuests,
           [action.payload.id]: action.payload
+        },
+        eventGuestsByGuestId: {
+          ...state.eventGuestsByGuestId,
+          [action.payload.guestId]: action.payload.id
+        },
+        eventGuestsByEventId: {
+          ...state.eventGuestsByEventId,
+          [action.payload.eventId]:
+            state.eventGuestsByEventId[action.payload.eventId] &&
+            state.eventGuestsByEventId[action.payload.eventId].includes(action.payload.id)
+              ? state.eventGuestsByEventId[action.payload.eventId]
+              : [...(state.eventGuestsByEventId[action.payload.eventId] || []), action.payload.id]
         }
       };
     case "events/DELETE_GUEST_SUCCESS": {
+      const { eventId } = state.eventGuests[action.payload];
       const guests = { ...state.eventGuests };
       delete guests[action.payload];
       return {
         ...state,
-        eventGuests: guests
+        eventGuests: guests,
+        eventGuestsByGuestId: Object.entries(state.eventGuestsByGuestId).reduce((accum, [guestId, eventGuestId]) => {
+          return action.payload === eventGuestId ? accum : { ...accum, [guestId]: eventGuestId };
+        }, {} as { [guestId: string]: string }),
+        eventGuestsByEventId: state.eventGuestsByEventId[eventId].filter(
+          eventGuestId => eventGuestId !== action.payload
+        )
       };
     }
     case "events/FETCH_PLUS_ONE_SUCCESS":

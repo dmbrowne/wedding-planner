@@ -1,16 +1,10 @@
-import React, { Component } from "react";
+import React, { useRef } from "react";
 import firebase, { firestore } from "firebase/app";
-import { connect, DispatchProp } from "react-redux";
-import { IRootReducer, subscribeToPath, unsubscribeFromPath } from "../store/reducers";
-import {
-  setCurrentQueryPage,
-  setGuestsOrder,
-  fetchGuestSuccess,
-  unsubscribeGuestFetch,
-  updateGuestSuccess,
-  deleteGuestSuccess
-} from "../store/guests-actions";
+import { useDispatch } from "react-redux";
+import { setGuestsOrder, fetchGuestSuccess, updateGuestSuccess, deleteGuestSuccess } from "../store/guests-actions";
 import { IGuest } from "../store/types";
+import { useStateSelector } from "../store/redux";
+import usePaginationQuery from "../hooks/use-pagination-query";
 
 type TReduxProps = {
   hasMore: boolean;
@@ -27,147 +21,88 @@ type TReduxProps = {
 type TSubscriptionCallback = (snap: firebase.firestore.DocumentSnapshot<firebase.firestore.DocumentData>) => any;
 
 interface IGuestContext {
-  unsubscribeGuestListingWatch: undefined | (() => void);
-  startWatch: () => void;
+  unsubscribe: () => void;
   loadMore: () => void;
+  fetchAllGuests: () => void;
   listenToDocumentRef: (guestId: string, cb?: TSubscriptionCallback) => null | (() => void);
   getDocumentRef: (guestId: string) => firebase.firestore.DocumentReference;
   setCouple: (guest1Id: string, guest2Id: string) => Promise<void>;
   unsetCouple: (guest1Id: string, guest2Id: string) => Promise<void>;
-  removeFromGroup: (guestId: string, groupId: string) => Promise<void>;
-  addToGroup: (guestId: string, groupId: string) => Promise<void>;
 }
 
 export const GuestsContext = React.createContext<IGuestContext>({
-  unsubscribeGuestListingWatch: undefined,
-  startWatch: () => {},
+  unsubscribe: () => {},
   loadMore: () => {},
+  fetchAllGuests: () => {},
   listenToDocumentRef: () => ({} as any),
   getDocumentRef: () => ({} as any),
   setCouple: () => Promise.resolve(),
-  unsetCouple: () => Promise.resolve(),
-  removeFromGroup: () => Promise.resolve(),
-  addToGroup: () => Promise.resolve()
+  unsetCouple: () => Promise.resolve()
 });
 
-export const GuestsProvider = connect<TReduxProps, {}, {}, IRootReducer>(state => ({
-  weddingId: state.activeWeddingId,
-  currentPageNumber: state.guests.currentPageNumber,
-  subscriptionPaths: state.subscriptions,
-  documentsDerivedBySubscribe: state.guests.subscribed,
-  hasMore: state.guests.hasMore
-}))(
-  class GuestsProviderComponent extends Component<TReduxProps & DispatchProp> {
-    listingSubscribedGuestIds: string[] = [];
-    unsubscribeGuestListingWatch: undefined | (() => void) = undefined;
-    getDbRef = () => firebase.firestore().collection(`guests`);
+export const GuestsProvider: React.FC = ({ children }) => {
+  const dispatch = useDispatch();
+  const weddingId = useStateSelector(state => state.activeWeddingId);
+  const collectionRef = firebase.firestore().collection(`guests`);
+  const query = collectionRef
+    .where("weddingId", "==", weddingId)
+    .orderBy("name", "asc")
+    .limit(20);
+  const lastDocument = useRef<firestore.DocumentSnapshot<firestore.DocumentData> | undefined>(undefined);
 
-    getDocumentRef = (guestId: string) => this.getDbRef().doc(guestId);
+  const getDocumentRef = (guestId: string) => collectionRef.doc(guestId);
 
-    guestCouple = (guestId1: string, guestId2: string, link: boolean) => {
-      const batch = firebase.firestore().batch();
-      batch.update(this.getDbRef().doc(guestId1), { partnerId: link ? guestId2 : null });
-      batch.update(this.getDbRef().doc(guestId2), { partnerId: link ? guestId1 : null });
-      return batch.commit();
-    };
-
-    removeFromGroup = (guestId: string, groupId: string) => {
-      return this.getDocumentRef(guestId).update({ groupIds: firebase.firestore.FieldValue.arrayRemove(groupId) });
-    };
-
-    addToGroup = (guestId: string, groupId: string) => {
-      return this.getDocumentRef(guestId).update({ groupIds: firebase.firestore.FieldValue.arrayUnion(groupId) });
-    };
-
-    listenToDocumentRef = (guestId: string, cb?: TSubscriptionCallback) => {
-      const ref = this.getDocumentRef(guestId);
-
-      if (this.props.documentsDerivedBySubscribe[guestId]) {
-        return null;
-      }
-
-      this.props.dispatch(subscribeToPath(ref.path));
-
-      const unsubscribe = ref.onSnapshot(snap => {
-        this.props.dispatch(fetchGuestSuccess({ id: snap.id, ...(snap.data() as IGuest) }, true));
-        if (cb) cb(snap);
+  const fetchAllGuests = () => {
+    return query.get().then(querySnap => {
+      querySnap.docChanges().forEach(({ doc, type }) => {
+        if (type === "added") dispatch(fetchGuestSuccess({ id: doc.id, ...(doc.data() as IGuest) }));
       });
+      dispatch(setGuestsOrder(querySnap.docs.map(({ id }) => id)));
+      const lastDoc = querySnap.docs[querySnap.docs.length - 1];
+      lastDocument.current = lastDoc;
+    });
+  };
 
-      return () => {
-        this.props.dispatch(unsubscribeFromPath(ref.path));
-        this.props.dispatch(unsubscribeGuestFetch(guestId));
-        unsubscribe();
-      };
-    };
-
-    onGuestsSnapshot = (snap: firestore.QuerySnapshot<firestore.DocumentData>, pageNumber: number) => {
-      const { dispatch } = this.props;
-
-      snap.docChanges().forEach(({ doc, type }) => {
-        if (type === "added") {
-          dispatch(fetchGuestSuccess({ id: doc.id, ...(doc.data() as IGuest) }, true));
-          if (!this.listingSubscribedGuestIds.includes(doc.id)) {
-            this.listingSubscribedGuestIds.push(doc.id);
-          }
-        }
+  const { loadMore, unsubscribe } = usePaginationQuery(
+    query,
+    {
+      onOrder: order => dispatch(setGuestsOrder(order)),
+      onSnap: (type, doc) => {
+        if (type === "added") dispatch(fetchGuestSuccess({ id: doc.id, ...(doc.data() as IGuest) }));
         if (type === "modified") dispatch(updateGuestSuccess({ id: doc.id, ...(doc.data() as IGuest) }));
         if (type === "removed") dispatch(deleteGuestSuccess(doc.id));
-      });
-      const order = snap.docs.map(doc => doc.id);
-      const hasMore = snap.docs.length === 21 * pageNumber;
-      dispatch(setCurrentQueryPage(pageNumber));
-      dispatch(setGuestsOrder(hasMore ? order.slice(0, order.length - 1) : order, hasMore));
-    };
-
-    loadMore = (pageNumber: number) => {
-      const { weddingId } = this.props;
-      const ref = this.getDbRef();
-
-      if (this.unsubscribeGuestListingWatch) {
-        this.unsubscribeGuestListingWatch();
       }
+    },
+    lastDocument.current
+  );
 
-      this.props.dispatch(subscribeToPath(ref.path));
+  const listenToDocumentRef = (guestId: string, cb?: TSubscriptionCallback) => {
+    return getDocumentRef(guestId).onSnapshot(snap => {
+      dispatch(fetchGuestSuccess({ id: snap.id, ...(snap.data() as IGuest) }));
+      if (cb) cb(snap);
+    });
+  };
 
-      const unsubscribe = ref
-        .where("weddingId", "==", weddingId)
-        .orderBy("name", "asc")
-        .limit(21 * pageNumber)
-        .onSnapshot(snap => this.onGuestsSnapshot(snap, pageNumber));
+  const guestCouple = (guestId1: string, guestId2: string, link: boolean) => {
+    const batch = firebase.firestore().batch();
+    batch.update(getDocumentRef(guestId1), { partnerId: link ? guestId2 : null });
+    batch.update(getDocumentRef(guestId2), { partnerId: link ? guestId1 : null });
+    return batch.commit();
+  };
 
-      this.unsubscribeGuestListingWatch = () => {
-        unsubscribe();
-        this.props.dispatch(unsubscribeFromPath(ref.path));
-        this.listingSubscribedGuestIds.forEach(id => {
-          this.props.dispatch(unsubscribeGuestFetch(id));
-        });
-      };
-    };
-
-    componentWillUnmount() {
-      if (this.unsubscribeGuestListingWatch) {
-        this.unsubscribeGuestListingWatch();
-      }
-    }
-
-    render() {
-      return (
-        <GuestsContext.Provider
-          value={{
-            unsubscribeGuestListingWatch: this.unsubscribeGuestListingWatch,
-            startWatch: () => (this.unsubscribeGuestListingWatch ? null : this.loadMore(1)),
-            loadMore: () => (this.props.hasMore ? this.loadMore(this.props.currentPageNumber + 1) : null),
-            listenToDocumentRef: this.listenToDocumentRef,
-            getDocumentRef: this.getDocumentRef,
-            setCouple: (id1, id2) => this.guestCouple(id1, id2, true),
-            unsetCouple: (id1, id2) => this.guestCouple(id1, id2, false),
-            removeFromGroup: this.removeFromGroup,
-            addToGroup: this.addToGroup
-          }}
-        >
-          {this.props.children}
-        </GuestsContext.Provider>
-      );
-    }
-  }
-);
+  return (
+    <GuestsContext.Provider
+      value={{
+        unsubscribe,
+        loadMore,
+        listenToDocumentRef,
+        getDocumentRef,
+        setCouple: (id1, id2) => guestCouple(id1, id2, true),
+        unsetCouple: (id1, id2) => guestCouple(id1, id2, false),
+        fetchAllGuests
+      }}
+    >
+      {children}
+    </GuestsContext.Provider>
+  );
+};

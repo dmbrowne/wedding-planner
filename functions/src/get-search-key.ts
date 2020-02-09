@@ -30,7 +30,22 @@ app.use(
 );
 app.use(validateFirebaseIdToken);
 
-app.post<{ weddingId: string }>("/", (req, res) => {
+app.post<{ weddingId: string }>("/", async (req, res) => {
+  const user = await admin
+    .firestore()
+    .doc(`users/${req.user.user_id}`)
+    .get();
+  const userData = user.data() as any;
+  if (!user.exists) {
+    res.status(400).send("User cannot be found");
+    return;
+  }
+
+  if (!userData.weddingIds || !userData.weddingIds.includes(req.body.weddingId)) {
+    res.status(401).send("User does not have permission to view this wedding");
+    return;
+  }
+
   // Create the params object as described in the Algolia documentation:
   // https://www.algolia.com/doc/guides/security/api-keys/#generating-api-keys
   const params = {

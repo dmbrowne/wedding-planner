@@ -7,14 +7,13 @@ import Guest from "./guest";
 type TCell = "expand" | "name" | "email" | string;
 
 interface IProps {
-  guestId: string;
   onExpand?: () => void;
   expandIcon?: "up" | "down";
   cellOrder: TCell[];
   eventGuest: IEventGuest;
-  onAddPlusOne: () => void;
-  onRemove: (guestId: string) => void;
-  onClick?: (guest: IGuest) => void;
+  onAddPlusOne?: () => void;
+  onRemove: () => void;
+  onClick?: () => void;
   render?: (colName: string, guest: IGuest) => ReactNode;
 }
 
@@ -23,20 +22,13 @@ const PlusOneControl: React.FC<{ value: string | number; onAdd: () => void }> = 
     <Box background="light-1" pad={{ horizontal: "small", vertical: "xsmall" }} border>
       <Text size="small" children={value} />
     </Box>
-    <Button
-      plain
-      onClick={e => {
-        e.stopPropagation();
-        onAdd();
-      }}
-    >
+    <Button plain onClick={onAdd}>
       <Box background="brand" pad="xxsmall" round children={<FormAdd size="small" />} />
     </Button>
   </Box>
 );
 
 const GuestListAttendeeRow: React.FC<IProps> = ({
-  guestId,
   eventGuest,
   onExpand,
   expandIcon = "up",
@@ -56,20 +48,22 @@ const GuestListAttendeeRow: React.FC<IProps> = ({
         const Icon = expandIcon === "up" ? FormUp : FormDown;
         return !!onExpand ? <Button plain onClick={onExpand} icon={<Icon />} /> : null;
       case "name":
-        return <Button plain onClick={() => onClick && onClick(guest)} children={<Text children={guest.name} />} />;
+        return <Button plain onClick={() => onClick && onClick()} children={<Text children={guest.name} />} />;
       case "email":
         return <Text children={guest.email} />;
       case "plusOne":
-        return <PlusOneControl onAdd={onAddPlusOne} value={eventGuest.plusOnes ? eventGuest.plusOnes.length : "0"} />;
+        return onAddPlusOne ? (
+          <PlusOneControl onAdd={onAddPlusOne} value={eventGuest.plusOnes ? eventGuest.plusOnes.length : "0"} />
+        ) : null;
       case "remove":
-        return <Button plain icon={<SubtractCircle />} onClick={() => onRemove(guest.id)} />;
+        return <Button plain icon={<SubtractCircle />} onClick={onRemove} />;
       default:
         return null;
     }
   };
 
   return (
-    <Guest id={guestId}>
+    <Guest id={eventGuest.guestId} subscribeWhileMounted>
       {({ guest }) => {
         const renderCell = getRowContent(guest);
         return (

@@ -1,61 +1,49 @@
-import { Thunk } from "./redux";
-import firebase from "firebase/app";
-
 export interface IGuestGroup {
   id: string;
   name: string;
-  members: string[];
-  jointInvitations?: boolean;
-  fetching?: boolean;
+  memberIds: string[];
   weddingId: string;
 }
 
 export interface IReducer {
+  order: string[];
   byId: {
     [id: string]: IGuestGroup;
   };
 }
-
-export const createGuestGroups = (groups: Omit<IGuestGroup, "weddingId">[]): Thunk<void, any> => async (
-  dispatch,
-  getState
-) => {
-  const weddingId = getState().activeWeddingId;
-  const db = firebase.firestore();
-
-  dispatch({ type: "guestGroups/CREATE", payload: groups });
-
-  try {
-    if (groups.length === 1) {
-      await db.doc(`guestGroups/${groups[0].id}`).set({ ...groups[0], weddingId });
-    } else {
-      const batch = db.batch();
-      groups.forEach(group => {
-        const ref = db.doc(`guestGroups/${group.id}`);
-        batch.set(ref, group);
-      });
-      await batch.commit();
-    }
-    dispatch({ type: "guestGroups/CREATE_SUCCESS", payload: groups });
-  } catch (e) {
-    dispatch({ type: "guestGroups/CREATE_ERROR", payload: e });
-  }
-};
 
 export const fetchGroupSuccess = (group: IGuestGroup) => ({
   type: "guestGroups/FETCH_SUCCESS" as "guestGroups/FETCH_SUCCESS",
   payload: group
 });
 
+export const deleteGroupSuccess = (groupId: string) => ({
+  type: "guestGroups/DELETE_SUCCESS" as "guestGroups/DELETE_SUCCESS",
+  payload: groupId
+});
+
+export const applyOrder = (idOrder: string[]) => ({
+  type: "guestGroups/APPLY_ORDER" as "guestGroups/APPLY_ORDER",
+  payload: idOrder
+});
+
 type TFetchGroupSuccess = ReturnType<typeof fetchGroupSuccess>;
-type TActions = TFetchGroupSuccess;
+type TDeleteGroupSuccess = ReturnType<typeof deleteGroupSuccess>;
+type TApplyOrder = ReturnType<typeof applyOrder>;
+type TActions = TFetchGroupSuccess | TDeleteGroupSuccess | TApplyOrder;
 
 const defaultState: IReducer = {
+  order: [],
   byId: {}
 };
 
 export default function guestGroupsReducer(state: IReducer = defaultState, action: TActions) {
   switch (action.type) {
+    case "guestGroups/APPLY_ORDER":
+      return {
+        ...state,
+        order: action.payload
+      };
     case "guestGroups/FETCH_SUCCESS":
       return {
         ...state,
@@ -63,6 +51,14 @@ export default function guestGroupsReducer(state: IReducer = defaultState, actio
           ...state.byId,
           [action.payload.id]: action.payload
         }
+      };
+    case "guestGroups/DELETE_SUCCESS":
+      const cloned = { ...state.byId };
+      delete cloned[action.payload];
+      return {
+        ...state,
+        order: state.order.filter(id => id !== action.payload),
+        byId: cloned
       };
     default:
       return state;

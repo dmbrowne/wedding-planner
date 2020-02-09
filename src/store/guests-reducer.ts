@@ -2,16 +2,11 @@ import { initialState, TActions } from "./guests-actions";
 import { IGuest } from "./types";
 
 export interface IGuestsReducer {
-  subscribed: {
-    [id: string]: boolean;
-  };
   byId: {
     [id: string]: IGuest;
   };
   order: string[];
   checked: string[];
-  currentPageNumber: number;
-  hasMore: boolean;
 }
 
 export default function guestsReducer(state = initialState, action: TActions) {
@@ -29,49 +24,19 @@ export default function guestsReducer(state = initialState, action: TActions) {
     case "guests/APPLY_ORDER":
       return {
         ...state,
-        order: action.payload.order,
-        hasMore: action.payload.hasMore
+        order: action.payload
       };
     case "guests/SET_CURRENT_PAGE_NUMBER":
       return {
         ...state,
         currentPageNumber: action.payload
       };
-    case "guests/FETCH":
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          [action.payload.guestId]: {
-            fetching: true
-          }
-        }
-      };
     case "guests/FETCH_SUCCESS":
       return {
         ...state,
-        // unless specifically given in the action, the subscribe propert should stay the same
-        subscribed: {
-          ...state.subscribed,
-          [action.payload.id]:
-            action.meta && typeof action.meta.subscribed !== "undefined"
-              ? action.meta.subscribed
-              : state.subscribed[action.payload.id]
-        },
         byId: {
           ...state.byId,
-          [action.payload.id]: {
-            ...action.payload,
-            fetching: false
-          }
-        }
-      };
-    case "guests/UNSUBSCRIBE":
-      return {
-        ...state,
-        subscribed: {
-          ...state.subscribed,
-          [action.payload]: false
+          [action.payload.id]: action.payload
         }
       };
     case "guests/UPDATE_SUCCESS":
@@ -79,7 +44,7 @@ export default function guestsReducer(state = initialState, action: TActions) {
         ...state,
         byId: {
           ...state.byId,
-          [action.payload.id]: { ...state.byId[action.payload.id], ...action.payload, fetching: false }
+          [action.payload.id]: { ...state.byId[action.payload.id], ...action.payload }
         }
       };
     default:

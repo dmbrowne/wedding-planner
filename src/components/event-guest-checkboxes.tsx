@@ -19,6 +19,7 @@ export const EventGuestCheckBoxes: React.FC<
       {props.kind === "multi" ? (
         props.services.map(service => (
           <CheckBox
+            key={service.id}
             label={service.name}
             checked={(props.rsvp && props.rsvp[service.id]) || false}
             onChange={() => onRespond(service.id)}

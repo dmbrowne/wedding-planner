@@ -7,10 +7,12 @@ export const ALGOLIA_SEARCH_KEY = functions.config().algolia.search_key;
 
 export const agoliaClient = algolia(ALGOLIA_ID, ALGOLIA_ADMIN_KEY);
 
-export function modifyAlgoliaDocument<D>(
+export async function modifyAlgoliaDocument<D>(
   indexName: string,
   { before, after }: functions.Change<functions.firestore.DocumentSnapshot>,
-  transformData?: (data: D & { objectID: string; [key: string]: any }) => { objectID: string; [key: string]: any }
+  transformData?:
+    | ((data: D & { objectID: string; [key: string]: any }) => { objectID: string; [key: string]: any })
+    | ((data: D & { objectID: string; [key: string]: any }) => Promise<{ objectID: string; [key: string]: any }>)
 ) {
   const isDeletion = before.exists && !after.exists;
   const index = agoliaClient.initIndex(indexName);
@@ -18,8 +20,9 @@ export function modifyAlgoliaDocument<D>(
   if (!isDeletion) {
     const data = after.data() as D & { objectID: string; [key: string]: any };
     data.objectID = after.id;
-    const guest = transformData ? transformData({ ...data }) : data;
-    return index.saveObject(guest);
+
+    const document = await Promise.resolve(transformData ? transformData({ ...data }) : data).then();
+    return index.saveObject(document);
   }
 
   return index.deleteObject(after.id);

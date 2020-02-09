@@ -46,10 +46,9 @@ export const addNewGuests = (guests: INewGuest[]): Thunk<void, IAddGuests | IAdd
   );
 };
 
-export const fetchGuestSuccess = (guest: IGuest, subscribed?: boolean) => ({
+export const fetchGuestSuccess = (guest: IGuest) => ({
   type: "guests/FETCH_SUCCESS" as "guests/FETCH_SUCCESS",
-  payload: guest,
-  meta: { subscribed }
+  payload: guest
 });
 
 export const fetchGuest = (
@@ -71,22 +70,9 @@ export const updateGuestSuccess = (guest: IGuest) => ({
   payload: guest
 });
 
-export const unsubscribeGuestFetch = (guestId: string) => ({
-  type: "guests/UNSUBSCRIBE" as "guests/UNSUBSCRIBE",
-  payload: guestId
-});
-
-export const setGuestsOrder = (idOrder: string[], hasMore?: boolean) => ({
+export const setGuestsOrder = (idOrder: string[]) => ({
   type: "guests/APPLY_ORDER" as "guests/APPLY_ORDER",
-  payload: {
-    order: idOrder,
-    hasMore
-  }
-});
-
-export const setCurrentQueryPage = (page: number): ISetCurrentQueryPageNumber => ({
-  type: "guests/SET_CURRENT_PAGE_NUMBER",
-  payload: page
+  payload: idOrder
 });
 
 export const checkGuests = (ids: string[]) => {
@@ -110,7 +96,6 @@ export const deleteGuestSuccess = (guestId: string) => ({
 
 type TFetchGuestSuccess = ReturnType<typeof fetchGuestSuccess> & { meta?: { subscribed?: boolean } };
 type TUpdateGuestSuccess = ReturnType<typeof updateGuestSuccess>;
-type TGuestUnsubscribe = ReturnType<typeof unsubscribeGuestFetch>;
 type TApplyGuestOrder = ReturnType<typeof setGuestsOrder>;
 type TCheckGuests = ReturnType<typeof checkGuests>;
 type TUncheckGuests = ReturnType<typeof uncheckGuests>;
@@ -127,14 +112,10 @@ export type TActions =
   | TUpdateGuestSuccess
   | TCheckGuests
   | TUncheckGuests
-  | TGuestUnsubscribe
   | TDeleteGuestSuccess;
 
 export const initialState: IGuestsReducer = {
   byId: {},
   order: [],
-  checked: [],
-  currentPageNumber: 0,
-  hasMore: true,
-  subscribed: {}
+  checked: []
 };

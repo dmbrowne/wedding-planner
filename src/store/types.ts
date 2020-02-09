@@ -5,7 +5,6 @@ export interface IGuest {
   preferredName?: string;
   partnerId?: string;
   groupIds?: string[];
-  fetching?: boolean;
   weddingId: string;
   weddingTitle?: string;
   weddingParty?: "groom" | "bridal";
@@ -26,6 +25,9 @@ export interface IEvent {
   description?: string;
   main?: boolean;
   dateTime: number;
+  numberOfGuests?: number;
+  numberOfGroups?: number;
+  numberOfPlusOnes?: number;
   services?: {
     [serviceId: string]: IService;
   };
@@ -39,9 +41,12 @@ export interface IEvent {
 
 export interface IEventGuest {
   id: string;
+  guestId: string;
+  name: string;
   plusOnes?: string[];
   eventId: string;
   weddingId: string;
+  groupId?: string;
   rsvp?:
     | {
         [serviceId: string]: boolean;
@@ -49,8 +54,8 @@ export interface IEventGuest {
     | boolean;
 }
 
-export interface IPlusOneGuest extends Omit<IEventGuest, "plusOnes"> {
+export interface IPlusOneGuest extends Omit<IEventGuest, "plusOnes" | "name" | "guestId" | "groupId"> {
   dietryRequirements?: string;
-  guestId: string;
+  mainEventGuestId: string;
   name?: string;
 }
