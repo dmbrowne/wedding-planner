@@ -8,13 +8,12 @@ import { GuestsContext } from "../components/guests-context";
 import Guest from "../components/guest";
 import GuestQuickView from "../components/guest-quick-view";
 import { IGuest } from "../store/types";
+import SContainer from "../components/container";
 
 const Guests: React.FC<RouteComponentProps> = ({ match }) => {
-  const { loadMore, unsubscribe, getDocumentRef } = useContext(GuestsContext);
+  const { loadMore, getDocumentRef } = useContext(GuestsContext);
   const [guestQuickViewId, setGuestQuickViewId] = useState<string | void>();
   const guests = useStateSelector(allGuestsListingSelector);
-
-  useEffect(() => unsubscribe, []);
 
   const deleteGuest = (guest: IGuest) => {
     const shouldDelete = window.confirm(`Are you sure you want to delete ${guest.name}`);
@@ -24,12 +23,13 @@ const Guests: React.FC<RouteComponentProps> = ({ match }) => {
   };
 
   return (
-    <>
+    <SContainer>
       <Heading level="1">Guests</Heading>
       <Link to={`${match.url}/create`}>
         <Button as="span" label="Add guest" icon={<UserAdd />} primary />
       </Link>
       <DataTable
+        margin={{ vertical: "medium" }}
         onMore={loadMore}
         columns={[
           { property: "name", header: "Name" },
@@ -37,28 +37,27 @@ const Guests: React.FC<RouteComponentProps> = ({ match }) => {
           {
             property: "delete?",
             header: "",
-            render: datum => (
-              <Button
-                plain
-                onClick={e => {
-                  e.stopPropagation();
-                  deleteGuest(datum);
-                }}
-              >
-                <Box pad={{ horizontal: "xsmall" }} children={<Trash />} />
-              </Button>
-            )
-          }
+            render: datum =>
+              datum.weddingTitle === "groom" || datum.weddingTitle === "bride" ? null : (
+                <Button
+                  plain
+                  onClick={e => {
+                    e.stopPropagation();
+                    deleteGuest(datum);
+                  }}
+                >
+                  <Box pad={{ horizontal: "xsmall" }} children={<Trash />} />
+                </Button>
+              ),
+          },
         ]}
         data={guests}
         onClickRow={({ datum }: any) => setGuestQuickViewId(datum.id)}
       />
       {!!guestQuickViewId && (
-        <Guest id={guestQuickViewId}>
-          {({ guest }) => <GuestQuickView guest={guest} onClose={() => setGuestQuickViewId()} />}
-        </Guest>
+        <Guest id={guestQuickViewId}>{({ guest }) => <GuestQuickView guest={guest} onClose={() => setGuestQuickViewId()} />}</Guest>
       )}
-    </>
+    </SContainer>
   );
 };
 

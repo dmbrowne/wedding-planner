@@ -10,15 +10,15 @@ import { firestore } from "firebase/app";
 import { Close, Add } from "grommet-icons";
 
 interface IProps {
+  weddingId: string;
   eventId: string;
   onSelect: (groupId: string, batch?: firestore.WriteBatch) => any;
   onClose: () => void;
   getSelectedEventGuestIds: () => string[];
 }
 
-const AddToGroupModal: React.FC<IProps> = ({ eventId, onSelect, onClose, getSelectedEventGuestIds }) => {
-  const { loadMore, unsubscribe } = useGuestGroups(eventId);
-  const weddingId = useStateSelector(state => state.activeWeddingId);
+const AddToGroupModal: React.FC<IProps> = ({ eventId, weddingId, onSelect, onClose, getSelectedEventGuestIds }) => {
+  const { loadMore, unsubscribe } = useGuestGroups(eventId, weddingId);
   const guestGroups = useStateSelector(orderedGuestGroupsSelector);
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<IAlgoliaGuestGroup[]>([]);
@@ -62,8 +62,7 @@ const AddToGroupModal: React.FC<IProps> = ({ eventId, onSelect, onClose, getSele
       {!exactGroupMatchFound && (
         <Box pad={{ vertical: "small" }}>
           <Text size="small" color="dark-3" margin={{ bottom: "small" }}>
-            An exact match for '{query}' hasn't been found, create <strong>'{query}'</strong> and add the selected
-            guests to it?
+            An exact match for '{query}' hasn't been found, create <strong>'{query}'</strong> and add the selected guests to it?
           </Text>
           {addNewGroupButton}
         </Box>
@@ -83,8 +82,8 @@ const AddToGroupModal: React.FC<IProps> = ({ eventId, onSelect, onClose, getSele
   const createNewGroupMessage = () => (
     <Box pad={{ vertical: "small" }}>
       <Text size="small" color="dark-3" margin={{ bottom: "small" }}>
-        Cannot find any groups using the search terms provided, would you like to create a new group called '{query}'
-        instead and add the selected guests to it?
+        Cannot find any groups using the search terms provided, would you like to create a new group called '{query}' instead and add the
+        selected guests to it?
       </Text>
       {addNewGroupButton}
     </Box>
@@ -101,9 +100,7 @@ const AddToGroupModal: React.FC<IProps> = ({ eventId, onSelect, onClose, getSele
                 const isLastItem = idx === group.memberIds.length - 1;
                 return (
                   <EventGuest key={eventGuestId} id={eventGuestId}>
-                    {({ eventGuest }) => (
-                      <Text size="small" color="dark-6" children={eventGuest.name + (isLastItem ? "" : ", ")} />
-                    )}
+                    {({ eventGuest }) => <Text size="small" color="dark-6" children={eventGuest.name + (isLastItem ? "" : ", ")} />}
                   </EventGuest>
                 );
               })}

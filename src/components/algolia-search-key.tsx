@@ -4,13 +4,13 @@ import { useStateSelector } from "../store/redux";
 
 export const AlgoliaSearchKeyContext = React.createContext({
   key: "",
-  fetching: false
+  fetching: false,
 });
 
 const PROJECT_ID = "wedlock-316f8";
 
 export const AlgoliaSearchKeyProvider: React.FC = ({ children }) => {
-  const weddingId = useStateSelector(state => state.activeWeddingId);
+  const weddingId = useStateSelector(state => state.activeWedding.wedding && state.activeWedding.wedding.id);
   const algoliaSearchKey = weddingId && window.sessionStorage.getItem(`algoliaSearchKey-${weddingId}`);
   const [searchkey, setsearchkey] = useState(algoliaSearchKey || "");
   const [fetchInProgress, setfetchInProgress] = useState(false);
@@ -34,7 +34,7 @@ export const AlgoliaSearchKeyProvider: React.FC = ({ children }) => {
           return fetch("https://us-central1-" + PROJECT_ID + ".cloudfunctions.net/getAlgoliaSearchKey/", {
             method: "post",
             body: JSON.stringify({ weddingId }),
-            headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }
+            headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
           });
         })
         .then(response => response.json())
@@ -46,12 +46,12 @@ export const AlgoliaSearchKeyProvider: React.FC = ({ children }) => {
         .catch(err => {
           throw Error(err);
         });
+    } else {
+      setsearchkey(algoliaSearchKey);
     }
   }, [weddingId]);
 
   return (
-    <AlgoliaSearchKeyContext.Provider value={{ key: searchkey, fetching: fetchInProgress }}>
-      {children}
-    </AlgoliaSearchKeyContext.Provider>
+    <AlgoliaSearchKeyContext.Provider value={{ key: searchkey, fetching: fetchInProgress }}>{children}</AlgoliaSearchKeyContext.Provider>
   );
 };

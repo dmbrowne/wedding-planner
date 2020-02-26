@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import firebase, { firestore } from "firebase/app";
 import { useDispatch } from "react-redux";
 import { setGuestsOrder, fetchGuestSuccess, updateGuestSuccess, deleteGuestSuccess } from "../store/guests-actions";
@@ -37,18 +37,20 @@ export const GuestsContext = React.createContext<IGuestContext>({
   listenToDocumentRef: () => ({} as any),
   getDocumentRef: () => ({} as any),
   setCouple: () => Promise.resolve(),
-  unsetCouple: () => Promise.resolve()
+  unsetCouple: () => Promise.resolve(),
 });
 
 export const GuestsProvider: React.FC = ({ children }) => {
   const dispatch = useDispatch();
-  const weddingId = useStateSelector(state => state.activeWeddingId);
+  const weddingId = useStateSelector(state => state.activeWedding.wedding && state.activeWedding.wedding.id);
   const collectionRef = firebase.firestore().collection(`guests`);
   const query = collectionRef
     .where("weddingId", "==", weddingId)
     .orderBy("name", "asc")
     .limit(20);
   const lastDocument = useRef<firestore.DocumentSnapshot<firestore.DocumentData> | undefined>(undefined);
+
+  useEffect(() => unsubscribe, []);
 
   const getDocumentRef = (guestId: string) => collectionRef.doc(guestId);
 
@@ -71,7 +73,7 @@ export const GuestsProvider: React.FC = ({ children }) => {
         if (type === "added") dispatch(fetchGuestSuccess({ id: doc.id, ...(doc.data() as IGuest) }));
         if (type === "modified") dispatch(updateGuestSuccess({ id: doc.id, ...(doc.data() as IGuest) }));
         if (type === "removed") dispatch(deleteGuestSuccess(doc.id));
-      }
+      },
     },
     lastDocument.current
   );
@@ -99,7 +101,7 @@ export const GuestsProvider: React.FC = ({ children }) => {
         getDocumentRef,
         setCouple: (id1, id2) => guestCouple(id1, id2, true),
         unsetCouple: (id1, id2) => guestCouple(id1, id2, false),
-        fetchAllGuests
+        fetchAllGuests,
       }}
     >
       {children}

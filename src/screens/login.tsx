@@ -1,14 +1,12 @@
-import React, { useRef, useEffect, useState } from "react";
-import firebase from "firebase/app";
-import { ui } from "../firebase";
+import React, { useContext, useEffect } from "react";
 import { RouteComponentProps } from "react-router-dom";
-import { Heading, Text } from "grommet";
+import { Text, Box } from "grommet";
+import AuthUi from "../components/auth-ui";
+import AuthContext from "../components/auth-context";
 
 const Login: React.FC<RouteComponentProps> = ({ location, history }) => {
-  const [uiLoaded, setUiLoaded] = useState(false);
-  const loginElementRef = useRef<null | HTMLDivElement>(null);
-
-  let signInSuccessUrl = "/";
+  const { authenticated } = useContext(AuthContext);
+  let signInSuccessUrl = "/weddings";
 
   if (location.search) {
     const params = location.search.slice(1).split("&");
@@ -23,26 +21,16 @@ const Login: React.FC<RouteComponentProps> = ({ location, history }) => {
   }
 
   useEffect(() => {
-    if (loginElementRef.current && !uiLoaded) {
-      ui.start(loginElementRef.current, {
-        signInOptions: [{ provider: firebase.auth.EmailAuthProvider.PROVIDER_ID, requireDisplayName: false }],
-        callbacks: {
-          uiShown: () => setUiLoaded(true),
-          signInSuccessWithAuthResult: () => {
-            history.push(signInSuccessUrl);
-            return false;
-          }
-        }
-      });
-    }
-  }, []);
+    if (authenticated) history.push(signInSuccessUrl);
+  }, [authenticated]);
 
   return (
-    <>
-      <Heading level={1}>Log in</Heading>
-      {!uiLoaded && <Text>Loading sign in form...</Text>}
-      <div ref={loginElementRef} />
-    </>
+    <Box background="white" fill align="center" justify="center">
+      <AuthUi
+        onSuccess={() => history.push(signInSuccessUrl)}
+        preFormContent={<Text>Login or register by entering your email address</Text>}
+      />
+    </Box>
   );
 };
 

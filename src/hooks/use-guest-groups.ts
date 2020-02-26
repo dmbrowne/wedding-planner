@@ -32,20 +32,18 @@ const guestGroupCollectionQuery = (weddingId: string, eventId: string) => {
     .orderBy("name", "asc");
 };
 
-export default function useGuestGroupsLoadMore(eventId: string) {
+export default function useGuestGroupsLoadMore(eventId: string, weddingId: string) {
   const dispatch = useDispatch();
-  const weddingId = useStateSelector(state => state.activeWeddingId);
   const query = guestGroupCollectionQuery(weddingId, eventId);
 
   return usePaginationQuery(query, {
     onSnap: (type, doc) => onDocChange(dispatch, { type, data: doc }),
-    onOrder: order => onDocChange(dispatch, { type: "order", data: order })
+    onOrder: order => onDocChange(dispatch, { type: "order", data: order }),
   });
 }
 
-export const useWatchTopFiveDocuments = (eventId: string) => {
+export const useWatchTopFiveDocuments = (eventId: string, weddingId: string) => {
   const dispatch = useDispatch();
-  const weddingId = useStateSelector(state => state.activeWeddingId);
   const query = guestGroupCollectionQuery(weddingId, eventId).limit(5);
   const subscription = useRef<undefined | (() => void)>(undefined);
 
@@ -66,13 +64,12 @@ export const useWatchTopFiveDocuments = (eventId: string) => {
           unsubscribe();
           subscription.current = undefined;
         }
-      : undefined
+      : undefined,
   };
 };
 
-export const useWatchAllDocuments = (eventId: string) => {
+export const useWatchAllDocuments = (eventId: string, weddingId: string) => {
   const dispatch = useDispatch();
-  const weddingId = useStateSelector(state => state.activeWeddingId);
   const query = guestGroupCollectionQuery(weddingId, eventId);
   const subscription = useRef<undefined | (() => void)>(undefined);
 
@@ -90,7 +87,7 @@ export const useWatchAllDocuments = (eventId: string) => {
           unsubscribe();
           subscription.current = undefined;
         }
-      : undefined
+      : undefined,
   };
 };
 

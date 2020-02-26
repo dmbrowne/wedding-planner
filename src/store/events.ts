@@ -1,4 +1,4 @@
-import { IEvent, IEventGuest, IPlusOneGuest } from "./types";
+import { IEvent, IEventGuest, IPlusOneGuest, IAmenity } from "./types";
 
 export interface IReducer {
   eventsById: {
@@ -18,86 +18,97 @@ export interface IReducer {
   plusOnes: {
     [id: string]: IPlusOneGuest;
   };
+  amenitiesById: {
+    [id: string]: IAmenity;
+  };
+  amenitiesOrder: string[];
 }
 
 export const fetchEventSuccess = (event: IEvent) => ({
   type: "events/FETCH_SUCCESS" as "events/FETCH_SUCCESS",
-  payload: event
+  payload: event,
 });
 
 export const updateEventSuccess = (event: IEvent) => ({
   type: "events/UPDATE_SUCCESS" as "events/UPDATE_SUCCESS",
-  payload: event
+  payload: event,
 });
 
 export const deleteEventSuccess = (eventId: string) => ({
   type: "events/DELETE_SUCCESS" as "events/DELETE_SUCCESS",
-  payload: eventId
+  payload: eventId,
 });
 
 export const fetchEventGuestSuccess = (guest: IEventGuest) => ({
   type: "events/FETCH_GUEST_SUCCESS" as "events/FETCH_GUEST_SUCCESS",
-  payload: guest
+  payload: guest,
 });
 
 export const updateEventGuestSuccess = (guest: IEventGuest) => ({
   type: "events/UPDATE_GUEST_SUCCESS" as "events/UPDATE_GUEST_SUCCESS",
-  payload: guest
+  payload: guest,
 });
 
 export const deleteEventGuestSuccess = (guestId: string) => ({
   type: "events/DELETE_GUEST_SUCCESS" as "events/DELETE_GUEST_SUCCESS",
-  payload: guestId
+  payload: guestId,
 });
 
 export const fetchPlusOneSuccess = (plusOne: IPlusOneGuest) => ({
   type: "events/FETCH_PLUS_ONE_SUCCESS" as "events/FETCH_PLUS_ONE_SUCCESS",
-  payload: plusOne
+  payload: plusOne,
 });
 
 export const updatePlusOneSuccess = (plusOne: IPlusOneGuest) => ({
   type: "events/UPDATE_PLUS_ONE_SUCCESS" as "events/UPDATE_PLUS_ONE_SUCCESS",
-  payload: plusOne
+  payload: plusOne,
 });
 
 export const deletePlusOneSuccess = (plusOneId: string) => ({
   type: "events/DELETE_PLUS_ONE_SUCCESS" as "events/DELETE_PLUS_ONE_SUCCESS",
-  payload: plusOneId
+  payload: plusOneId,
 });
 
 export const applyGuestListingOrder = (ids: string[]) => ({
   type: "events/APPLY_GUEST_ORDER" as "events/APPLY_GUEST_ORDER",
-  payload: ids
+  payload: ids,
 });
 
 export const applyEventListingOrder = (ids: string[]) => ({
   type: "events/APPLY_EVENT_ORDER" as "events/APPLY_EVENT_ORDER",
-  payload: ids
+  payload: ids,
 });
 
-type TFetchEventSuccess = ReturnType<typeof fetchEventSuccess>;
-type TUpdateEventSuccess = ReturnType<typeof updateEventSuccess>;
-type TDeleteEventSuccess = ReturnType<typeof deleteEventSuccess>;
-type TFetchEventGuestSuccess = ReturnType<typeof fetchEventGuestSuccess>;
-type TUpdateEventGuestSuccess = ReturnType<typeof updateEventGuestSuccess>;
-type TDeleteEventGuestSuccess = ReturnType<typeof deleteEventGuestSuccess>;
-type TFetchPlusOneSuccess = ReturnType<typeof fetchPlusOneSuccess>;
-type TUpdatePlusOneSuccess = ReturnType<typeof updatePlusOneSuccess>;
-type TDeletePlusOneSuccess = ReturnType<typeof deletePlusOneSuccess>;
-type TGuestOrder = ReturnType<typeof applyGuestListingOrder>;
-type TEventsOrder = ReturnType<typeof applyEventListingOrder>;
+export const setAmenityOrder = (idOrder: string[]) => ({
+  type: "events/SET_AMENITIES_ORDER" as "events/SET_AMENITIES_ORDER",
+  payload: idOrder,
+});
+
+export const fetchAmenitySuccess = (amenity: IAmenity) => ({
+  type: "events/FETCH_AMENITY_SUCCESS" as "events/FETCH_AMENITY_SUCCESS",
+  payload: amenity,
+});
+
+export const deleteAmenitySuccess = (amenityId: string) => ({
+  type: "events/DELETE_AMENITY_SUCCESS" as "events/DELETE_AMENITY_SUCCESS",
+  payload: amenityId,
+});
+
 type TActions =
-  | TFetchEventSuccess
-  | TUpdateEventSuccess
-  | TDeleteEventSuccess
-  | TFetchEventGuestSuccess
-  | TDeleteEventGuestSuccess
-  | TUpdateEventGuestSuccess
-  | TFetchPlusOneSuccess
-  | TUpdatePlusOneSuccess
-  | TDeletePlusOneSuccess
-  | TGuestOrder
-  | TEventsOrder;
+  | ReturnType<typeof fetchEventSuccess>
+  | ReturnType<typeof updateEventSuccess>
+  | ReturnType<typeof deleteEventSuccess>
+  | ReturnType<typeof fetchEventGuestSuccess>
+  | ReturnType<typeof updateEventGuestSuccess>
+  | ReturnType<typeof deleteEventGuestSuccess>
+  | ReturnType<typeof fetchPlusOneSuccess>
+  | ReturnType<typeof updatePlusOneSuccess>
+  | ReturnType<typeof deletePlusOneSuccess>
+  | ReturnType<typeof applyGuestListingOrder>
+  | ReturnType<typeof applyEventListingOrder>
+  | ReturnType<typeof setAmenityOrder>
+  | ReturnType<typeof fetchAmenitySuccess>
+  | ReturnType<typeof deleteAmenitySuccess>;
 
 const initalState: IReducer = {
   eventGuestOrder: [],
@@ -106,7 +117,9 @@ const initalState: IReducer = {
   eventGuests: {},
   eventGuestsByGuestId: {},
   eventGuestsByEventId: {},
-  plusOnes: {}
+  plusOnes: {},
+  amenitiesById: {},
+  amenitiesOrder: [],
 };
 
 export default function eventsReducer(state: IReducer = initalState, action: TActions) {
@@ -116,8 +129,8 @@ export default function eventsReducer(state: IReducer = initalState, action: TAc
         ...state,
         eventsById: {
           ...state.eventsById,
-          [action.payload.id]: action.payload
-        }
+          [action.payload.id]: action.payload,
+        },
       };
     case "events/UPDATE_SUCCESS":
       return {
@@ -126,9 +139,9 @@ export default function eventsReducer(state: IReducer = initalState, action: TAc
           ...state.eventsById,
           [action.payload.id]: {
             ...state.eventsById[action.payload.id],
-            ...action.payload
-          }
-        }
+            ...action.payload,
+          },
+        },
       };
     case "events/FETCH_GUEST_SUCCESS":
     case "events/UPDATE_GUEST_SUCCESS":
@@ -136,11 +149,11 @@ export default function eventsReducer(state: IReducer = initalState, action: TAc
         ...state,
         eventGuests: {
           ...state.eventGuests,
-          [action.payload.id]: action.payload
+          [action.payload.id]: action.payload,
         },
         eventGuestsByGuestId: {
           ...state.eventGuestsByGuestId,
-          [action.payload.guestId]: action.payload.id
+          [action.payload.guestId]: action.payload.id,
         },
         eventGuestsByEventId: {
           ...state.eventGuestsByEventId,
@@ -148,22 +161,29 @@ export default function eventsReducer(state: IReducer = initalState, action: TAc
             state.eventGuestsByEventId[action.payload.eventId] &&
             state.eventGuestsByEventId[action.payload.eventId].includes(action.payload.id)
               ? state.eventGuestsByEventId[action.payload.eventId]
-              : [...(state.eventGuestsByEventId[action.payload.eventId] || []), action.payload.id]
-        }
+              : [...(state.eventGuestsByEventId[action.payload.eventId] || []), action.payload.id],
+        },
       };
     case "events/DELETE_GUEST_SUCCESS": {
       const { eventId } = state.eventGuests[action.payload];
       const guests = { ...state.eventGuests };
       delete guests[action.payload];
+      const eventGuestsForEvent = state.eventGuestsByEventId[eventId];
       return {
         ...state,
         eventGuests: guests,
-        eventGuestsByGuestId: Object.entries(state.eventGuestsByGuestId).reduce((accum, [guestId, eventGuestId]) => {
-          return action.payload === eventGuestId ? accum : { ...accum, [guestId]: eventGuestId };
-        }, {} as { [guestId: string]: string }),
-        eventGuestsByEventId: state.eventGuestsByEventId[eventId].filter(
-          eventGuestId => eventGuestId !== action.payload
-        )
+        eventGuestsByGuestId: Object.entries(state.eventGuestsByGuestId).reduce(
+          (accum: { [guestId: string]: string }, [guestId, eventGuestId]) => {
+            return action.payload === eventGuestId ? accum : { ...accum, [guestId]: eventGuestId };
+          },
+          {}
+        ),
+        eventGuestsByEventId: {
+          ...state.eventGuestsByEventId,
+          ...(eventGuestsForEvent
+            ? { [eventId]: state.eventGuestsByEventId[eventId].filter(eventGuestId => eventGuestId !== action.payload) }
+            : {}),
+        },
       };
     }
     case "events/FETCH_PLUS_ONE_SUCCESS":
@@ -171,8 +191,8 @@ export default function eventsReducer(state: IReducer = initalState, action: TAc
         ...state,
         plusOnes: {
           ...state.plusOnes,
-          [action.payload.id]: action.payload
-        }
+          [action.payload.id]: action.payload,
+        },
       };
     case "events/UPDATE_PLUS_ONE_SUCCESS":
       return {
@@ -181,26 +201,47 @@ export default function eventsReducer(state: IReducer = initalState, action: TAc
           ...state.plusOnes,
           [action.payload.id]: {
             ...state.plusOnes[action.payload.id],
-            ...action.payload
-          }
-        }
+            ...action.payload,
+          },
+        },
       };
     case "events/DELETE_PLUS_ONE_SUCCESS":
       const plusOnes = { ...state.plusOnes };
       delete plusOnes[action.payload];
       return {
         ...state,
-        plusOnes: plusOnes
+        plusOnes: plusOnes,
       };
     case "events/APPLY_GUEST_ORDER":
       return {
         ...state,
-        eventGuestOrder: action.payload
+        eventGuestOrder: action.payload,
       };
     case "events/APPLY_EVENT_ORDER":
       return {
         ...state,
-        eventsOrder: action.payload
+        eventsOrder: action.payload,
+      };
+    case "events/FETCH_AMENITY_SUCCESS":
+      return {
+        ...state,
+        amenitiesById: {
+          ...state.amenitiesById,
+          [action.payload.id]: action.payload,
+        },
+      };
+    case "events/DELETE_AMENITY_SUCCESS":
+      return {
+        ...state,
+        amenitiesOrder: state.amenitiesOrder.filter(id => id !== action.payload),
+        amenitiesById: Object.entries(state.amenitiesById).reduce((accum, [id, amenity]) => {
+          return id === action.payload ? accum : { ...accum, [id]: amenity };
+        }, {} as IReducer["amenitiesById"]),
+      };
+    case "events/SET_AMENITIES_ORDER":
+      return {
+        ...state,
+        amenitiesOrder: action.payload,
       };
     default:
       return state;

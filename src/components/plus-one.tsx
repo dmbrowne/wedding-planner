@@ -16,14 +16,7 @@ interface IProps {
   renderLoading?: () => ReactElement;
 }
 
-const PlusOne: React.FC<IProps> = ({
-  children,
-  eventId,
-  id,
-  subscribeWhileMounted,
-  renderNoGuestFound,
-  renderLoading
-}) => {
+const PlusOne: React.FC<IProps> = ({ children, eventId, id, subscribeWhileMounted, renderNoGuestFound, renderLoading }) => {
   const dispatch = useDispatch();
   const plusOneRef = firestore()
     .collection("events")

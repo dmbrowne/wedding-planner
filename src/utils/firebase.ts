@@ -1,9 +1,11 @@
 import * as firebase from "firebase/app";
-import * as firebaseui from "firebaseui";
+// import * as firebaseui from "firebaseui";
 
 // import "firebase/analytics";
 import "firebase/auth";
 import "firebase/firestore";
+import "firebase/functions";
+import "firebase/storage";
 
 firebase.initializeApp({
   apiKey: "AIzaSyB8vAn16SJlQLN-QbdPOaJiyn5QMr7ZHis",
@@ -13,8 +15,8 @@ firebase.initializeApp({
   storageBucket: "wedlock-316f8.appspot.com",
   messagingSenderId: "638603296304",
   appId: "1:638603296304:web:37612623e13c9371b777f5",
-  measurementId: "G-VQ5QM7E78Z"
+  measurementId: "G-VQ5QM7E78Z",
 });
 
 // firebase.analytics();
-export const ui = new firebaseui.auth.AuthUI(firebase.auth());
+// export const ui = new firebaseui.auth.AuthUI(firebase.auth());

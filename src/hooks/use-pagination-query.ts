@@ -17,9 +17,7 @@ export default function usePaginationQuery(
   const [fetchInProgress, setfetchInProgress] = useState(false);
   const [order, setOrder] = useState<Array<string[]>>([]);
   const lastDocument = useRef<
-    | firestore.QueryDocumentSnapshot<firestore.DocumentData>
-    | firestore.DocumentSnapshot<firestore.DocumentData>
-    | undefined
+    firestore.QueryDocumentSnapshot<firestore.DocumentData> | firestore.DocumentSnapshot<firestore.DocumentData> | undefined
   >(undefined);
 
   useEffect(() => {
@@ -34,10 +32,18 @@ export default function usePaginationQuery(
     const newOrderIdx = unsubscribers.current.length;
     if (lastDocument.current) {
       unsubscribers.current.push(
-        query.startAfter(lastDocument.current).onSnapshot(snap => doStuffWithResults(snap, newOrderIdx))
+        query.startAfter(lastDocument.current).onSnapshot(snap => {
+          console.log("onSnap");
+          return doStuffWithResults(snap, newOrderIdx);
+        })
       );
     } else {
-      unsubscribers.current.push(query.onSnapshot(snap => doStuffWithResults(snap, newOrderIdx)));
+      unsubscribers.current.push(
+        query.onSnapshot(snap => {
+          console.log("onSnap");
+          return doStuffWithResults(snap, newOrderIdx);
+        })
+      );
     }
   };
 
@@ -59,6 +65,6 @@ export default function usePaginationQuery(
     loadMore,
     unsubscribe: () => {
       unsubscribers.current.forEach(unsubscribe => unsubscribe());
-    }
+    },
   };
 }

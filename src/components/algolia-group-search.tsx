@@ -23,15 +23,12 @@ export interface IProps {
 
 const AlgoliaGroupSearch: React.FC<IProps> = ({ onResult, query, eventId, onChange }) => {
   const { key } = useContext(AlgoliaSearchKeyContext);
-
   const searchClient = key ? algoliasearch("KDLM57WWV5", key) : null;
   const index = searchClient ? searchClient.initIndex("guestGroups") : null;
 
   useEffect(() => {
     if (index) {
-      index
-        .search({ query, ...(eventId ? { filters: `eventId:${eventId}` } : {}) })
-        .then(response => onResult(response.hits));
+      index.search({ query, ...(eventId ? { filters: `eventId:${eventId}` } : {}) }).then(response => onResult(response.hits));
     }
   }, [query]);
 
@@ -39,13 +36,7 @@ const AlgoliaGroupSearch: React.FC<IProps> = ({ onResult, query, eventId, onChan
     return <Spinner show={true} accessibilityLabel="guest search loader" />;
   }
 
-  return (
-    <TextInput
-      value={query}
-      onChange={e => onChange(e.target.value)}
-      placeholder="Search by group or a group's member name"
-    />
-  );
+  return <TextInput value={query} onChange={e => onChange(e.target.value)} placeholder="Search by group or a group's member name" />;
 };
 
 export default AlgoliaGroupSearch;

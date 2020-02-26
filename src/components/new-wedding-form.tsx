@@ -1,8 +1,9 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, ReactNode } from "react";
 import { Box, Button, Text, Heading, Form, FormField, TextInput, ResponsiveContext } from "grommet";
 import styled from "styled-components";
-import { Close } from "grommet-icons";
 import { SegmentedControl } from "gestalt";
+import * as yup from "yup";
+
 import { IGuest } from "../store/types";
 
 export type TSubmitValue = {
@@ -13,6 +14,7 @@ export type TSubmitValue = {
 interface IProps {
   onCancel: () => any;
   onSubmit: (values: TSubmitValue) => any;
+  formFooter?: ReactNode;
 }
 
 const PlainFieldSet = styled.fieldset`
@@ -28,7 +30,7 @@ const PartnerNamesGrid = styled.div`
   align-items: flex-start;
 `;
 
-const NewWeddingForm: React.FC<IProps> = ({ onCancel, onSubmit }) => {
+const NewWeddingForm: React.FC<IProps> = ({ onCancel, onSubmit, formFooter }) => {
   const titles = ["Bride", "Groom"];
   const parties = { Bride: "bridal", Groom: "groom" };
   const [weddingPartner1, setweddingPartner1] = useState("");
@@ -47,6 +49,8 @@ const NewWeddingForm: React.FC<IProps> = ({ onCancel, onSubmit }) => {
     update(e.target.value);
   };
 
+  const isValid = weddingPartner1 && weddingPartner2 && weddingDayName;
+
   return (
     <Form
       onSubmit={() =>
@@ -56,14 +60,14 @@ const NewWeddingForm: React.FC<IProps> = ({ onCancel, onSubmit }) => {
             {
               name: weddingPartner1,
               weddingTitle: titles[partner1PartyIdx].toLowerCase(),
-              weddingParty: parties[titles[partner1PartyIdx] as "Bride" | "Groom"] as "groom" | "bridal"
+              weddingParty: parties[titles[partner1PartyIdx] as "Bride" | "Groom"] as "groom" | "bridal",
             },
             {
               name: weddingPartner2,
               weddingTitle: titles[partner2PartyIdx].toLowerCase(),
-              weddingParty: parties[titles[partner2PartyIdx] as "Bride" | "Groom"] as "groom" | "bridal"
-            }
-          ]
+              weddingParty: parties[titles[partner2PartyIdx] as "Bride" | "Groom"] as "groom" | "bridal",
+            },
+          ],
         })
       }
     >
@@ -72,12 +76,7 @@ const NewWeddingForm: React.FC<IProps> = ({ onCancel, onSubmit }) => {
         <NameContainerEl>
           <Box>
             <FormField htmlFor="wedding-partner-1">
-              <TextInput
-                placeholder="Name"
-                id="wedding-partner-1"
-                value={weddingPartner1}
-                onChange={nameChange(true)}
-              />
+              <TextInput placeholder="Name" id="wedding-partner-1" value={weddingPartner1} onChange={nameChange(true)} />
             </FormField>
             <SegmentedControl
               items={titles}
@@ -94,12 +93,7 @@ const NewWeddingForm: React.FC<IProps> = ({ onCancel, onSubmit }) => {
           </Box>
           <Box>
             <FormField htmlFor="wedding-partner-2">
-              <TextInput
-                placeholder="Name"
-                id="wedding-partner-2"
-                value={weddingPartner2}
-                onChange={nameChange(false)}
-              />
+              <TextInput placeholder="Name" id="wedding-partner-2" value={weddingPartner2} onChange={nameChange(false)} />
             </FormField>
             <SegmentedControl
               items={titles}
@@ -120,9 +114,10 @@ const NewWeddingForm: React.FC<IProps> = ({ onCancel, onSubmit }) => {
           />
         </FormField>
       </PlainFieldSet>
+      {formFooter}
       <Box direction="row" justify="end" gap="medium">
         <Button label="Cancel" onClick={onCancel} />
-        <Button type="submit" primary label="Create" />
+        <Button type="submit" disabled={!isValid} primary label="Create" />
       </Box>
     </Form>
   );

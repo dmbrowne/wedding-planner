@@ -8,9 +8,12 @@ import {
   fetchPlusOneSuccess,
   updatePlusOneSuccess,
   deletePlusOneSuccess,
-  applyEventListingOrder
+  applyEventListingOrder,
+  setAmenityOrder,
+  fetchAmenitySuccess,
+  deleteAmenitySuccess,
 } from "../store/events";
-import { IEvent, IPlusOneGuest } from "../store/types";
+import { IEvent, IPlusOneGuest, IAmenity } from "../store/types";
 import { useStateSelector } from "../store/redux";
 
 const EventsWatcher: React.FC<{ weddingId: string }> = ({ weddingId, children }) => {
@@ -21,7 +24,7 @@ const EventsWatcher: React.FC<{ weddingId: string }> = ({ weddingId, children })
       .firestore()
       .collection("events")
       .where("weddingId", "==", weddingId)
-      .orderBy("dateTime")
+      .orderBy("startDate")
       .onSnapshot(snap => {
         dispatch(applyEventListingOrder(snap.docs.map(({ id }) => id)));
         snap.docChanges().forEach(({ doc, type }) => {
@@ -39,7 +42,7 @@ const EventsWatcher: React.FC<{ weddingId: string }> = ({ weddingId, children })
 
 export const PlusOnesWatcher: React.FC<{ eventId: string }> = ({ eventId, children }) => {
   const dispatch = useDispatch();
-  const weddingId = useStateSelector(state => state.activeWeddingId);
+  const weddingId = useStateSelector(state => state.activeWedding.wedding && state.activeWedding.wedding.id);
 
   useEffect(() => {
     const unsubscribe = firebase
@@ -57,6 +60,30 @@ export const PlusOnesWatcher: React.FC<{ eventId: string }> = ({ eventId, childr
       });
 
     return unsubscribe;
+  }, []);
+
+  return <>{children}</>;
+};
+
+export const AmenitiesWatcher: React.FC<{ eventId: string }> = ({ children, eventId }) => {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(setAmenityOrder([]));
+  }, [eventId]);
+
+  useEffect(() => {
+    return firebase
+      .firestore()
+      .collection(`events/${eventId}/amenities`)
+      .orderBy("name")
+      .onSnapshot(snap => {
+        snap.docChanges().forEach(({ doc, type }) => {
+          if (type === "added" || type === "modified") dispatch(fetchAmenitySuccess({ id: doc.id, ...(doc.data() as IAmenity) }));
+          if (type === "removed") dispatch(deleteAmenitySuccess(doc.id));
+        });
+        dispatch(setAmenityOrder(snap.docs.map(({ id }) => id)));
+      });
   }, []);
 
   return <>{children}</>;

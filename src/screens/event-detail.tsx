@@ -2,8 +2,16 @@ import React from "react";
 import { Heading, Box, Text, Button, BoxProps } from "grommet";
 import styled from "styled-components";
 import RoundedCard from "../components/rounded-card";
-import { AddCircle, LinkNext } from "grommet-icons";
+import { AddCircle, FormNextLink, SettingsOption } from "grommet-icons";
+import { matchPath } from "react-router";
 import { RouteComponentProps } from "react-router-dom";
+import { useStateSelector } from "../store/redux";
+import { Spinner, Tooltip } from "gestalt";
+import { orderMapByChildKey } from "../utils";
+import { orderedAmenitiesSelector } from "../selectors/selectors";
+import { IEvent } from "../store/types";
+import AuthenticatedRoute from "../components/authenticated-route";
+import EventSettings from "./event-settings";
 
 const Container = styled(Box).attrs({ vertical: "medium" })`
   display: block;
@@ -12,21 +20,13 @@ const Container = styled(Box).attrs({ vertical: "medium" })`
 const SHorizontalScrollContainer = styled(Box).attrs({ wrap: false, direction: "row", pad: { right: "medium" } })`
   overflow: auto;
 `;
-const SHorizontalScrollItem = styled<any>(Box).attrs({
-  margin: (props: any) =>
-    props.first
-      ? { left: "medium", right: "small" }
-      : props.last
-      ? { right: "medium", left: "small" }
-      : { horizontal: "small" }
-})`
+const SHorizontalScrollItem = styled<any>(Box).attrs((props: any) => ({
+  margin: props.first ? { left: "medium", right: "small" } : props.last ? { right: "medium", left: "small" } : { horizontal: "small" },
+}))`
   flex: 0 0 auto;
 `;
 
-type TSectionHeading = { title: string } & (
-  | { onClick?: () => void; buttonLabel?: string }
-  | { onClick: () => void; buttonLabel: string }
-);
+type TSectionHeading = { title: string } & ({ onClick?: () => void; buttonLabel?: string } | { onClick: () => void; buttonLabel: string });
 
 const SectionHeading: React.FC<TSectionHeading> = ({ title, onClick, buttonLabel, ...props }) => (
   <Box as="header" direction="row" align="center" {...props}>
@@ -36,7 +36,7 @@ const SectionHeading: React.FC<TSectionHeading> = ({ title, onClick, buttonLabel
         <Button plain onClick={onClick}>
           <Box direction="row" gap="xxsmall">
             <Text color="brand" children={buttonLabel} />
-            <LinkNext color="brand" />
+            <FormNextLink color="brand" />
           </Box>
         </Button>
       </Box>
@@ -44,107 +44,136 @@ const SectionHeading: React.FC<TSectionHeading> = ({ title, onClick, buttonLabel
   </Box>
 );
 
-const Section: React.FC<Omit<TSectionHeading, "title"> & BoxProps & { title?: string; titleProps?: BoxProps }> = ({
-  children,
-  title,
-  onClick,
-  buttonLabel,
-  titleProps,
-  ...props
-}) => (
+interface ISectionProps extends Omit<TSectionHeading, "title">, Omit<BoxProps, "onClick"> {
+  title?: string;
+  titleProps?: BoxProps;
+}
+
+const Section: React.FC<ISectionProps> = ({ children, title, onClick, buttonLabel, titleProps, ...props }) => (
   <Box as="section" margin={{ horizontal: "medium", bottom: "medium" }} {...props}>
     {title && <SectionHeading title={title} onClick={onClick} buttonLabel={buttonLabel} {...titleProps} />}
     {children}
   </Box>
 );
 
-const EventDetail: React.FC<RouteComponentProps> = ({ match, history }) => {
-  const services = [
-    { name: "Ceremony", date: new Date("April 24, 2020 13:00:00") },
-    { name: "Dinner", date: new Date("April 24, 2020 16:00:00") },
-    { name: "Reception", date: new Date("April 24, 2020 19:00:00") }
-  ];
-  return (
-    <Container>
-      <Heading level={1} margin={{ horizontal: "medium" }} children="The Wedding" />
+const HorizontalListAddButton: React.FC<{ label: string; onClick: () => void }> = ({ label, onClick }) => (
+  <Button plain onClick={onClick}>
+    <Box align="center" gap="small" pad="small">
+      <Box round pad="xsmall" background="white" elevation="small">
+        <AddCircle color="brand" size="32px" />
+      </Box>
+      <Text color="brand" children={label} />
+    </Box>
+  </Button>
+);
 
-      <Section
-        title="Guests"
-        onClick={() => history.push(`${match.url}/guestlist`)}
-        buttonLabel="View / edit guestlist"
-      >
+interface IEventDetailProps extends RouteComponentProps<{ eventId: string }> {
+  event: IEvent;
+}
+
+const EventDetail: React.FC<IEventDetailProps> = ({ match, history, event }) => {
+  const amenities = useStateSelector(orderedAmenitiesSelector);
+  const { numberOfGuests = 0, attending = 0, notAttending = 0 } = event || {};
+  const services = event && event.services && orderMapByChildKey(event.services, "startDate", "asc");
+
+  return (
+    <>
+      <Section title="Guests" onClick={() => history.push(`${match.url}/guestlist`)} buttonLabel="View / edit guestlist">
         <Text as="p" margin={{ top: "0" }}>
-          <Text size="large" as="span" children="64 " />
-          Guests currently invited in total, including the bride and groom
+          <Text size="large" as="span" children={`${numberOfGuests} `} />
+          Guests currently invited in total
         </Text>
         <Text as="p" color="dark-3" margin="none">
-          <Text as="span" color="neutral-1" children="31 " />
+          <Text as="span" color="neutral-1" children={`${attending} `} />
           Attending
         </Text>
         <Text as="p" color="dark-3" margin="none">
-          <Text as="span" color="status-critical" children="13 " />
+          <Text as="span" color="status-critical" children={`${notAttending} `} />
           Not attending
         </Text>
         <Text as="p" color="dark-3" margin="none">
-          <Text as="span" color="status-warning" children="20 " />
+          <Text as="span" color="status-warning" children={numberOfGuests - (attending + notAttending) + " "} />
           Not confirmed
         </Text>
       </Section>
 
-      <Section margin={{ vertical: "medium" }}>
-        <Heading level={2} margin={{ horizontal: "medium" }} children="Services" />
-        <SHorizontalScrollContainer>
-          {services.map((service, idx) => (
-            <SHorizontalScrollItem first={idx === 0}>
-              <RoundedCard
-                margin={{ vertical: "xxsmall" }}
-                elevation="xsmall"
-                width="350px"
-                height="200px"
-                pad="medium"
-              >
-                <Heading level="3" size="small" as="header" children={service.name} />
-              </RoundedCard>
+      {services && (
+        <Section
+          titleProps={{ margin: { horizontal: "medium" } }}
+          margin={{ vertical: "medium" }}
+          title="Services"
+          onClick={services.length > 5 ? () => {} : undefined}
+          buttonLabel="View all / edit amenities order"
+        >
+          {services.length === 0 && <Text margin={{ horizontal: "medium", bottom: "medium" }} children="No services added yet" />}
+          <SHorizontalScrollContainer>
+            {services.slice(0, 5).map((service, idx) => (
+              <SHorizontalScrollItem key={service.id} first={idx === 0}>
+                <RoundedCard margin={{ vertical: "xxsmall" }} elevation="xsmall" width="350px" height="200px" pad="medium">
+                  <Heading level="3" size="small" as="header" children={service.name} />
+                </RoundedCard>
+              </SHorizontalScrollItem>
+            ))}
+            <SHorizontalScrollItem align="center" justify="center" width={{ min: "200px" }} last>
+              <HorizontalListAddButton label="add service" onClick={() => history.push(`${match.url}/add-service`)} />
             </SHorizontalScrollItem>
-          ))}
-          <SHorizontalScrollItem align="center" justify="center" pad="medium" width={{ min: "200px" }} last>
-            <Text color="brand" size="large" children="Add service" />
-            <Button icon={<AddCircle color="brand" size="32px" />} />
-          </SHorizontalScrollItem>
-          <Box width={{ min: "1px" }} />
-        </SHorizontalScrollContainer>
-      </Section>
+            <Box width={{ min: "1px" }} />
+          </SHorizontalScrollContainer>
+        </Section>
+      )}
 
       <Section
         titleProps={{ margin: { horizontal: "medium" } }}
         margin={{ vertical: "medium" }}
         title="Nearby amenities"
-        onClick={() => {}}
+        onClick={amenities.length > 5 ? () => {} : undefined}
         buttonLabel="View all / edit amenities order"
       >
+        {amenities.length === 0 && <Text margin={{ horizontal: "medium", bottom: "medium" }} children="No amenities added yet" />}
         <SHorizontalScrollContainer>
-          {services.map((service, idx) => (
-            <SHorizontalScrollItem first={idx === 0}>
-              <RoundedCard
-                margin={{ vertical: "xxsmall" }}
-                elevation="xsmall"
-                width="350px"
-                height="200px"
-                pad="medium"
-              >
-                <Heading level="3" size="small" as="header" children={service.name} />
+          {amenities.slice(0, 5).map((amenity, idx) => (
+            <SHorizontalScrollItem key={amenity.id} first={idx === 0}>
+              <RoundedCard margin={{ vertical: "xxsmall" }} elevation="xsmall" width="350px" height="200px" pad="medium">
+                <Heading level="3" size="small" as="header" children={amenity.name} />
               </RoundedCard>
             </SHorizontalScrollItem>
           ))}
-          <SHorizontalScrollItem align="center" justify="center" pad="medium" width={{ min: "200px" }} last>
-            <Text color="brand" size="large" children="Add amenity" />
-            <Button icon={<AddCircle color="brand" size="32px" />} />
+          <SHorizontalScrollItem align="center" justify="center" width={{ min: "200px" }} last>
+            <HorizontalListAddButton label="add amenity" onClick={() => history.push(`${match.url}/add-amenity`)} />
           </SHorizontalScrollItem>
           <Box width={{ min: "1px" }} />
         </SHorizontalScrollContainer>
       </Section>
+    </>
+  );
+};
+
+const EventDetailRoutes: React.FC<RouteComponentProps<{ eventId: string; weddingId: string }>> = ({ match, history, location }) => {
+  const eventId = match.params.eventId;
+  const event = useStateSelector(state => state.events.eventsById[eventId]);
+
+  if (!event) {
+    return <Spinner show accessibilityLabel="Loading event details" />;
+  }
+  const isSettingRoute = !!matchPath(location.pathname, {
+    path: match.url + "/settings",
+  });
+  return (
+    <Container>
+      <Box direction="row" align="start" justify="between">
+        <Heading level={1} margin={{ horizontal: "medium" }} children={event.name} />
+        <Tooltip {...({ inline: true, text: "Settings" } as any)}>
+          <Button
+            onClick={() => history.push(match.url + (isSettingRoute ? "" : "/settings"))}
+            icon={<SettingsOption size="32px" color={isSettingRoute ? "selected" : "dark-1"} />}
+            margin={{ right: "small" }}
+          />
+        </Tooltip>
+      </Box>
+      <AuthenticatedRoute exact path={match.url + "/"} render={props => <EventDetail {...props} event={event} />} />
+      <AuthenticatedRoute path={match.url + "/settings"} render={props => <EventSettings {...props} event={event} />} />
     </Container>
   );
 };
 
-export default EventDetail;
+export default EventDetailRoutes;

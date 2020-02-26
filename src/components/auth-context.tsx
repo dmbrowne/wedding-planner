@@ -3,7 +3,7 @@ import firebase, { User } from "firebase/app";
 
 const AuthContext = createContext<{ authenticated: false; user: null } | { authenticated: true; user: User }>({
   authenticated: false,
-  user: null
+  user: null,
 });
 
 export const AuthProvider: React.FC = ({ children }) => {
@@ -11,7 +11,7 @@ export const AuthProvider: React.FC = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    firebase.auth().onAuthStateChanged(user => {
+    return firebase.auth().onAuthStateChanged(user => {
       setUser(user);
       setFetchState("success");
     });

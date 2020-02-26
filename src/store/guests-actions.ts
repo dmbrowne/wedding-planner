@@ -25,11 +25,9 @@ interface ISetCurrentQueryPageNumber {
   payload: number;
 }
 
-export const addNewGuests = (guests: INewGuest[]): Thunk<void, IAddGuests | IAddGuestsSuccess> => (
-  dispatch,
-  getState
-) => {
-  const weddingId = getState().activeWeddingId;
+export const addNewGuests = (guests: INewGuest[]): Thunk<void, IAddGuests | IAddGuestsSuccess> => (dispatch, getState) => {
+  const state = getState();
+  const weddingId = state.activeWedding.wedding && state.activeWedding.wedding.id;
   dispatch({ type: "guests/ADD", payload: guests });
 
   const batcher = firestore().batch();
@@ -41,19 +39,17 @@ export const addNewGuests = (guests: INewGuest[]): Thunk<void, IAddGuests | IAdd
 
   batcher.commit().then(() =>
     dispatch({
-      type: "guests/ADD_SUCCESS"
+      type: "guests/ADD_SUCCESS",
     })
   );
 };
 
 export const fetchGuestSuccess = (guest: IGuest) => ({
   type: "guests/FETCH_SUCCESS" as "guests/FETCH_SUCCESS",
-  payload: guest
+  payload: guest,
 });
 
-export const fetchGuest = (
-  guestId: string
-): Thunk<void, IFetchGuest | TFetchGuestSuccess | IFetchGuestError> => dispatch => {
+export const fetchGuest = (guestId: string): Thunk<void, IFetchGuest | TFetchGuestSuccess | IFetchGuestError> => dispatch => {
   dispatch({ type: "guests/FETCH", payload: { guestId } });
 
   firestore()
@@ -67,12 +63,12 @@ export const fetchGuest = (
 
 export const updateGuestSuccess = (guest: IGuest) => ({
   type: "guests/UPDATE_SUCCESS" as "guests/UPDATE_SUCCESS",
-  payload: guest
+  payload: guest,
 });
 
 export const setGuestsOrder = (idOrder: string[]) => ({
   type: "guests/APPLY_ORDER" as "guests/APPLY_ORDER",
-  payload: idOrder
+  payload: idOrder,
 });
 
 export const checkGuests = (ids: string[]) => {
@@ -91,7 +87,7 @@ export const uncheckGuests = (ids: string[]) => {
 
 export const deleteGuestSuccess = (guestId: string) => ({
   type: "guests/DELETE_GUEST_SUCCESS" as "guests/DELETE_GUEST_SUCCESS",
-  payload: guestId
+  payload: guestId,
 });
 
 type TFetchGuestSuccess = ReturnType<typeof fetchGuestSuccess> & { meta?: { subscribed?: boolean } };
@@ -117,5 +113,5 @@ export type TActions =
 export const initialState: IGuestsReducer = {
   byId: {},
   order: [],
-  checked: []
+  checked: [],
 };

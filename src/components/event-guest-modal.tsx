@@ -16,6 +16,7 @@ interface IEventGuestModal {
   onUpdatePlusOneName: (plusOneId: string, name: string) => void;
   onRemovePlusOne: (plusOneId: string) => void;
   removeGuest: () => void;
+  services?: IService[];
 }
 
 export interface ISingleServiceEventGuestModalProps extends IEventGuestModal {
@@ -49,7 +50,7 @@ export const EventGuestModal: React.FC<ISingleServiceEventGuestModalProps | IEve
               ? onRsvp({
                   eventGuestId: eventGuest.id,
                   serviceId,
-                  value: typeof props.rsvp === "object" ? !props.rsvp[serviceId] : true
+                  value: typeof props.rsvp === "object" ? !props.rsvp[serviceId] : true,
                 })
               : onRsvp({ eventGuestId: eventGuest.id, value: !props.rsvp });
           }}
@@ -73,7 +74,7 @@ export const EventGuestModal: React.FC<ISingleServiceEventGuestModalProps | IEve
                             rsvp: plusOneGuest.rsvp as {
                               [serviceId: string]: boolean;
                             },
-                            services: props.services
+                            services: props.services,
                           }
                         : { kind: "single", rsvp: plusOneGuest.rsvp as boolean })}
                       onRespond={serviceId => {
@@ -81,7 +82,7 @@ export const EventGuestModal: React.FC<ISingleServiceEventGuestModalProps | IEve
                           ? onPlusOneRsvp({
                               eventGuestId: plusOneGuest.id,
                               serviceId,
-                              value: typeof plusOneGuest.rsvp === "object" ? !plusOneGuest.rsvp[serviceId] : true
+                              value: typeof plusOneGuest.rsvp === "object" ? !plusOneGuest.rsvp[serviceId] : true,
                             })
                           : onPlusOneRsvp({ eventGuestId: plusOneGuest.id, value: !plusOneGuest.rsvp });
                       }}

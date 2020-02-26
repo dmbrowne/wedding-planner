@@ -3,7 +3,7 @@ import { Button, Heading, Box, Layer } from "grommet";
 import styled from "styled-components";
 import { useMediaQuery } from "react-responsive";
 import { RouteComponentProps } from "react-router-dom";
-import { firestore } from "firebase";
+import { firestore } from "firebase/app";
 import { Spinner, SegmentedControl } from "gestalt";
 
 import { useStateSelector } from "../store/redux";
@@ -15,7 +15,7 @@ import EventGuestListGuestsTable from "../components/event-guest-list-guests-tab
 import EventGroupsListing from "../components/event-groups-listing";
 import { eventGuestsSelector, ungroupedGuestsSelector } from "../selectors/selectors";
 import useEventGuests from "../hooks/use-event-guests";
-import useGuestGuestGroups, { useWatchTopFiveDocuments, useWatchAllDocuments } from "../hooks/use-guest-groups";
+import { useWatchTopFiveDocuments, useWatchAllDocuments } from "../hooks/use-guest-groups";
 import AddToGroupModal from "../components/add-to-group-modal";
 import { GuestsContext } from "../components/guests-context";
 import { Group } from "grommet-icons";
@@ -43,6 +43,7 @@ const AddGuestsContainer: React.FC = ({ children }) => {
 };
 
 const EventGuestlist: React.FC<RouteComponentProps<{ eventId: string; weddingId: string }>> = ({ match }) => {
+  const db = firestore();
   const tabs = ["All guests", "Groups"] as ["All guests", "Groups"];
   const { eventId, weddingId } = match.params;
   const guestContext = useContext(GuestsContext);
@@ -62,14 +63,14 @@ const EventGuestlist: React.FC<RouteComponentProps<{ eventId: string; weddingId:
   const [allEventGuestsFetched, setAllEventGuestsFetched] = useState(false);
   const [showAddToGroupModal, setShowAddToGroupModal] = useState(false);
   const [groupsListingState, setGroupsListingState] = useState<"full" | "short" | "initial">("initial");
-  const topFiveGroups = useWatchTopFiveDocuments(eventId);
-  const allGroups = useWatchAllDocuments(eventId);
+  const topFiveGroups = useWatchTopFiveDocuments(eventId, weddingId);
+  const allGroups = useWatchAllDocuments(eventId, weddingId);
 
   const servicesOrderedByDate =
     event && event.services
       ? Object.entries(event.services)
           .map(([id, service]) => ({ ...service, id }))
-          .sort((a, b) => (a.startDateTime < b.startDateTime ? -1 : 1))
+          .sort((a, b) => (a.startDate < b.startDate ? -1 : 1))
       : undefined;
 
   useEffect(() => eventGuestActions.unsubscribe, []);
@@ -102,10 +103,7 @@ const EventGuestlist: React.FC<RouteComponentProps<{ eventId: string; weddingId:
   };
 
   const rsvpRespond = (eventGuestId: string, attending: boolean, serviceId?: string, isPlusOne?: boolean) => {
-    const db = firestore();
-    const guestRef = isPlusOne
-      ? db.doc(`events/${eventId}/plusOnes/${eventGuestId}`)
-      : db.doc(`eventGuests/${eventGuestId}`);
+    const guestRef = isPlusOne ? db.doc(`events/${eventId}/plusOnes/${eventGuestId}`) : db.doc(`eventGuests/${eventGuestId}`);
 
     guestRef.update(serviceId ? { [`rsvp.${serviceId}`]: attending } : { rsvp: attending });
   };
@@ -117,18 +115,15 @@ const EventGuestlist: React.FC<RouteComponentProps<{ eventId: string; weddingId:
   };
 
   const addGuestToEvent = (guest: IGuest) => {
-    const db = firestore();
     db.collection("eventGuests").add({
       guestId: guest.id,
       name: guest.name,
       eventId,
-      weddingId
+      weddingId,
     });
   };
 
   const removeGuestFromEvent = (eventGuestId: string, isPlusOne?: boolean) => {
-    const db = firestore();
-
     if (isPlusOne) {
       const batch = db.batch();
       const plusOneRef = db.doc(`events/${eventId}/plusOnes/${eventGuestId}`);
@@ -150,7 +145,6 @@ const EventGuestlist: React.FC<RouteComponentProps<{ eventId: string; weddingId:
   };
 
   const addPlusOne = (eventGuestId: string) => {
-    const db = firestore();
     const batch = db.batch();
     const plusOneRef = db.collection(`events/${eventId}/plusOnes`).doc();
     const guestRef = db.doc(`eventGuests/${eventGuestId}`);
@@ -161,7 +155,6 @@ const EventGuestlist: React.FC<RouteComponentProps<{ eventId: string; weddingId:
   };
 
   const onBulkRsvp = (attendance: { [serviceId: string]: boolean } | boolean) => {
-    const db = firestore();
     const batch = db.batch();
     checkedGuestIds.forEach(guestId => {
       const isPlusOne = !!plusOnes[guestId];
@@ -182,9 +175,8 @@ const EventGuestlist: React.FC<RouteComponentProps<{ eventId: string; weddingId:
     onUpdatePlusOneName: updatePlusOneName,
     onClose: () => setViewGuest(),
     onRsvp: ({ serviceId, value }: OnRSVPArgs) => rsvpRespond(eventGuestId, value, serviceId, isPlusOne),
-    onPlusOneRsvp: ({ serviceId, value, eventGuestId: plusOneId }: OnRSVPArgs) =>
-      rsvpRespond(plusOneId, value, serviceId, true),
-    rsvp: isPlusOne ? (plusOnes[eventGuestId].rsvp as any) : (eventGuests[eventGuestId].rsvp as any)
+    onPlusOneRsvp: ({ serviceId, value, eventGuestId: plusOneId }: OnRSVPArgs) => rsvpRespond(plusOneId, value, serviceId, true),
+    rsvp: isPlusOne ? (plusOnes[eventGuestId].rsvp as any) : (eventGuests[eventGuestId].rsvp as any),
   });
 
   const getCheckedEventGuests = () => {
@@ -207,11 +199,10 @@ const EventGuestlist: React.FC<RouteComponentProps<{ eventId: string; weddingId:
   };
 
   const removeEventGuestFromGroup = (eventGuestId: string, groupId: string) => {
-    const db = firestore();
     const batch = db.batch();
     batch.update(db.doc(`eventGuests/${eventGuestId}`), { groupId: null });
     batch.update(db.doc(`events/${eventId}/guestGroups/${groupId}`), {
-      memberIds: firestore.FieldValue.arrayRemove(eventGuestId)
+      memberIds: firestore.FieldValue.arrayRemove(eventGuestId),
     });
     batch.commit();
   };
@@ -233,7 +224,6 @@ const EventGuestlist: React.FC<RouteComponentProps<{ eventId: string; weddingId:
   };
 
   const deleteGroup = (groupId: string) => {
-    const db = firestore();
     db.runTransaction(transaction => {
       return transaction.get(db.doc(`events/${eventId}/guestGroups/${groupId}`)).then(groupSnap => {
         const memberIds = (groupSnap.data() as IGuestGroup).memberIds;
@@ -262,11 +252,7 @@ const EventGuestlist: React.FC<RouteComponentProps<{ eventId: string; weddingId:
               {!showAddGuestModal && <Button label="Add guests" primary onClick={() => setShowAddGuestModal(true)} />}
             </Box>
             <Box background="light-1" pad="xxsmall" margin={{ vertical: "small" }}>
-              <SegmentedControl
-                selectedItemIndex={activeTab}
-                onChange={({ activeIndex: idx }) => setActiveTab(idx)}
-                items={tabs}
-              />
+              <SegmentedControl selectedItemIndex={activeTab} onChange={({ activeIndex: idx }) => setActiveTab(idx)} items={tabs} />
             </Box>
             {tabs[activeTab] === "All guests" && (
               <>
@@ -280,9 +266,7 @@ const EventGuestlist: React.FC<RouteComponentProps<{ eventId: string; weddingId:
                 <EventGuestListGuestsTable
                   event={event}
                   guests={invitedGuests}
-                  onViewGuest={(eventGuestId, isPlusOne) =>
-                    setViewGuest({ eventGuestId, isPlusOne: !!isPlusOne as any })
-                  }
+                  onViewGuest={(eventGuestId, isPlusOne) => setViewGuest({ eventGuestId, isPlusOne: !!isPlusOne as any })}
                   onRemoveGuest={(id, isPlusOne) => removeGuestFromEvent(id, isPlusOne)}
                   onAddPlusOne={guestId => addPlusOne(guestId)}
                   compactMode={!!showAddGuestModal}
@@ -316,9 +300,7 @@ const EventGuestlist: React.FC<RouteComponentProps<{ eventId: string; weddingId:
                     columns={["checkbox", "attendance", "name", ...(showAddGuestModal ? [] : ["email"]), "remove"]}
                     event={event}
                     guests={ungroupedGuests}
-                    onViewGuest={(eventGuestId, isPlusOne) =>
-                      setViewGuest({ eventGuestId, isPlusOne: !!isPlusOne as any })
-                    }
+                    onViewGuest={(eventGuestId, isPlusOne) => setViewGuest({ eventGuestId, isPlusOne: !!isPlusOne as any })}
                     onRemoveGuest={id => removeGuestFromEvent(id)}
                     compactMode={!!showAddGuestModal}
                     selectedRows={groupTabCheckedGuestIds}
@@ -343,10 +325,10 @@ const EventGuestlist: React.FC<RouteComponentProps<{ eventId: string; weddingId:
         )}
       </SOuterWrap>
       {viewGuest &&
-        (servicesOrderedByDate ? (
+        (event.allowRsvpPerService && servicesOrderedByDate ? (
           <EventGuestModal {...getEventGuestModalProps(viewGuest)} kind="multi" services={servicesOrderedByDate} />
         ) : (
-          <EventGuestModal {...getEventGuestModalProps(viewGuest)} kind="single" />
+          <EventGuestModal {...getEventGuestModalProps(viewGuest)} kind="single" services={servicesOrderedByDate} />
         ))}
       {showBulkRsvp && (
         <BulkRsvpEdit
@@ -358,6 +340,7 @@ const EventGuestlist: React.FC<RouteComponentProps<{ eventId: string; weddingId:
       )}
       {showAddToGroupModal && (
         <AddToGroupModal
+          weddingId={weddingId}
           eventId={eventId}
           getSelectedEventGuestIds={getCheckedEventGuests}
           onSelect={(groupId, batch) => addGroupToEventGuests(batch)(groupId)}

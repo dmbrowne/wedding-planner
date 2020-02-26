@@ -1,11 +1,15 @@
 import * as functions from "firebase-functions";
 import * as algolia from "algoliasearch";
+import * as mailgunJs from "mailgun-js";
 
 const ALGOLIA_ID = functions.config().algolia.app_id;
 const ALGOLIA_ADMIN_KEY = functions.config().algolia.admin_key;
 export const ALGOLIA_SEARCH_KEY = functions.config().algolia.search_key;
-
 export const agoliaClient = algolia(ALGOLIA_ID, ALGOLIA_ADMIN_KEY);
+
+export const mailGunApiKey = functions.config().mailgun.apikey;
+export const mailGunDomain = functions.config().mailgun.domain;
+export const mailGun = mailgunJs({ apiKey: mailGunApiKey, domain: mailGunDomain });
 
 export async function modifyAlgoliaDocument<D>(
   indexName: string,

@@ -1,17 +1,5 @@
 import React, { useState } from "react";
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableCell,
-  Button,
-  TableBody,
-  Text,
-  CheckBox,
-  Grommet,
-  Box,
-  InfiniteScroll
-} from "grommet";
+import { Table, TableHeader, TableRow, TableCell, Button, TableBody, Text, CheckBox, Grommet, Box, InfiniteScroll } from "grommet";
 import { FormUp } from "grommet-icons";
 
 import { useStateSelector } from "../store/redux";
@@ -36,16 +24,7 @@ interface IProps {
 }
 
 const EventGuestListGuestsTable: React.FC<IProps> = props => {
-  const {
-    compactMode,
-    onViewGuest,
-    onRemoveGuest,
-    onAddPlusOne,
-    selectedRows,
-    onSelectRows,
-    event,
-    onLoadMore
-  } = props;
+  const { compactMode, onViewGuest, onRemoveGuest, onAddPlusOne, selectedRows, onSelectRows, event, onLoadMore } = props;
   const tableHeaderProps = { scope: "col" as "col", background: "dark-1" };
   const plusOnes = useStateSelector(state => state.events.plusOnes);
   const eventGuests = useStateSelector(state => state.events.eventGuests);
@@ -53,15 +32,7 @@ const EventGuestListGuestsTable: React.FC<IProps> = props => {
   const totalRows = Object.keys(plusOnes).length + Object.keys(eventGuests).length;
   const isAllRowsSelected = selectedRows.size === totalRows;
 
-  const columns = props.columns || [
-    "checkbox",
-    "expand",
-    "attendance",
-    "name",
-    "plusOne",
-    ...(!compactMode ? ["email"] : []),
-    "remove"
-  ];
+  const columns = props.columns || ["checkbox", "expand", "attendance", "name", "plusOne", ...(!compactMode ? ["email"] : []), "remove"];
 
   const toggleAll = () => {
     const updatedSet = new Set(selectedRows);
@@ -133,7 +104,7 @@ const EventGuestListGuestsTable: React.FC<IProps> = props => {
   };
 
   const getAttendance = (guest: IPlusOneGuest | IEventGuest) => {
-    if (event.services) {
+    if (event.allowRsvpPerService && event.services) {
       if (typeof guest.rsvp !== "object") return "unresponded";
 
       const serviceIds = Object.keys(event.services);
@@ -146,7 +117,7 @@ const EventGuestListGuestsTable: React.FC<IProps> = props => {
       if (attendingServiceIds.length === 0) return "none";
       return "partial";
     }
-    return guest.rsvp ? "full" : "none";
+    return typeof guest.rsvp === "undefined" ? "unresponded" : guest.rsvp ? "full" : "none";
   };
 
   return (
@@ -157,7 +128,7 @@ const EventGuestListGuestsTable: React.FC<IProps> = props => {
           ["unresponded", "Not RSVP'd"],
           ["full", "Attending (all)"],
           ["partial", "Attending (some)"],
-          ["none", "Not Attending (any)"]
+          ["none", "Not Attending (any)"],
         ].map(([status, text]) => (
           <Box key={status} direction="row" gap="xxsmall" align="center">
             <Box round border={{ color: getAttendanceColour(status as any), size: "8px" }} />
@@ -187,11 +158,7 @@ const EventGuestListGuestsTable: React.FC<IProps> = props => {
           </TableHeader>
         )}
         <TableBody>
-          <InfiniteScroll
-            items={props.guests}
-            onMore={onLoadMore}
-            renderMarker={marker => <tr children={<td>{marker}</td>} />}
-          >
+          <InfiniteScroll items={props.guests} onMore={onLoadMore} renderMarker={marker => <tr children={<td>{marker}</td>} />}>
             {(invitedGuest: IEventGuest) => {
               const plusOneRows =
                 Array.isArray(invitedGuest.plusOnes) && invitedGuest.plusOnes.length > 0 && !props.hidePlusOnes

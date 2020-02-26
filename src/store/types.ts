@@ -1,5 +1,38 @@
+import { Node } from "slate";
+import firebase from "firebase/app";
+
+interface IPrivateDetails {
+  _private: {
+    owner: string;
+    collaborators?: string[];
+  };
+}
+export interface IWedding extends IPrivateDetails {
+  readonly id: string;
+  name: string;
+  couple: {
+    [id: string]: {
+      name: string;
+    };
+  };
+  cover?: {
+    imageRef?: string;
+    message?: {
+      slate: Node[];
+      html?: string;
+    };
+    showWelcome?: boolean;
+    welcomeImageRef?: string;
+    welcomeMessage?: {
+      slate: Node[];
+      html?: string;
+    };
+    backgroundColor?: string;
+  };
+}
+
 export interface IGuest {
-  id: string;
+  readonly id: string;
   name: string;
   email?: string;
   preferredName?: string;
@@ -11,23 +44,74 @@ export interface IGuest {
   dietryRequirements?: string;
 }
 
+interface IAddress {
+  street_number?: string;
+  route?: string;
+  country?: string;
+  postal_code?: string;
+  postal_town?: string;
+}
+
 export interface IService {
   id: string;
   name: string;
   description?: string;
-  startDateTime: number;
-  endDateTime?: number;
+  startDate: firebase.firestore.Timestamp;
+  startTime?: string;
+  endDate?: firebase.firestore.Timestamp;
+  address?: IAddress;
+  location?: {
+    lat: number;
+    lng: number;
+  };
 }
 
-export interface IEvent {
+export enum EAmenityTypes {
+  restaurant = "restaurant",
+  bar = "bar",
+  cafe = "cafe",
+  parking = "parking",
+  lodging = "lodging",
+  other = "other",
+}
+
+export interface IAmenity {
   id: string;
+  icon?: string;
+  place_id: string;
+  name: string;
+  formatted_address: string;
+  notes?: string;
+  type: EAmenityTypes;
+  location?: { lat: number; lng: number };
+  address?: Partial<{
+    street_number: string;
+    route: string;
+    country: string;
+    postal_code: string;
+    postal_town: string;
+  }>;
+  createdAt: firebase.firestore.Timestamp;
+}
+export interface IEvent extends IPrivateDetails {
+  id: string;
+  weddingId: string;
   name: string;
   description?: string;
   main?: boolean;
-  dateTime: number;
+  startDate: firebase.firestore.Timestamp;
+  startTime?: string;
   numberOfGuests?: number;
   numberOfGroups?: number;
   numberOfPlusOnes?: number;
+  allowRsvpPerService?: boolean;
+  attending?: number;
+  notAttending?: number;
+  location?: {
+    lat: number;
+    lng: number;
+  };
+  address?: IAddress;
   services?: {
     [serviceId: string]: IService;
   };
@@ -59,3 +143,30 @@ export interface IPlusOneGuest extends Omit<IEventGuest, "plusOnes" | "name" | "
   mainEventGuestId: string;
   name?: string;
 }
+
+export interface IUser {
+  readonly id: string;
+  email: string;
+  name?: string;
+  weddingIds: string[];
+  eventIds?: string[];
+  readonly accountType: "normal" | "planner";
+}
+
+export interface IAdminInvite {
+  id: string;
+  email: string;
+  weddingId: string;
+  expires: firebase.firestore.Timestamp;
+  from: string;
+}
+
+export type TEventFormData = {
+  name: string;
+  description: string;
+  date: string;
+  serviceHasTime?: boolean;
+  time?: string;
+  multiService?: boolean;
+  place?: google.maps.places.PlaceResult;
+};

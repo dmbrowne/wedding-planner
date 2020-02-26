@@ -12,11 +12,12 @@ import CreateNewGuestRow from "../components/create-new-guest-row";
 import { addNewGuests } from "../store/guests-actions";
 import AddPartner from "../components/add-partner";
 import { RouteChildrenProps } from "react-router-dom";
+import SContainer from "../components/container";
 
 const validationSchema = yup.object().shape({
   name: yup.string().required(),
   preferredName: yup.string(),
-  email: yup.string().email()
+  email: yup.string().email(),
 });
 
 const NewGuests: React.FC<RouteChildrenProps<{ weddingId: string }>> = ({ history, match }) => {
@@ -31,9 +32,7 @@ const NewGuests: React.FC<RouteChildrenProps<{ weddingId: string }>> = ({ histor
     } else {
       const arr = [...guests];
       arr.pop();
-      const valid = arr.every(({ name, preferredName, email }) =>
-        validationSchema.isValidSync({ name, preferredName, email })
-      );
+      const valid = arr.every(({ name, preferredName, email }) => validationSchema.isValidSync({ name, preferredName, email }));
       setIsValid(valid);
     }
   }, [guests]);
@@ -79,7 +78,7 @@ const NewGuests: React.FC<RouteChildrenProps<{ weddingId: string }>> = ({ histor
 
   const addGuests = () => {
     dispatch(addNewGuests(guests.slice(0, guests.length - 1)));
-    history.push(`/wedding/${match?.params.weddingId}/guests`);
+    history.push(`/weddings/${match?.params.weddingId}/guests`);
   };
 
   const onSelectPartner = (guestId: string) => {
@@ -92,7 +91,7 @@ const NewGuests: React.FC<RouteChildrenProps<{ weddingId: string }>> = ({ histor
   const closeModal = () => setModalPartner();
 
   return (
-    <>
+    <SContainer>
       <Heading level={1}>Create new guest(s)</Heading>
       <Box direction="row" justify="end" margin={{ bottom: "medium" }}>
         <FileInput name="upload-csv" label="Upload a CSV" onChange={uploadCsv} />
@@ -141,7 +140,7 @@ const NewGuests: React.FC<RouteChildrenProps<{ weddingId: string }>> = ({ histor
           </Box>
         </Layer>
       )}
-    </>
+    </SContainer>
   );
 };
 
