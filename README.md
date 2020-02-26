@@ -1,44 +1,99 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Project Witch
 
-## Available Scripts
+> This project was created with `npx create react app --template typescript`
 
-In the project directory, you can run:
+**Required**
 
-### `yarn start`
+- Typescript 3.7
+- yarn
+- node 8
+- firebase-cli
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Get started
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+### Installing the application
 
-### `yarn test`
+1. navigate to projects base folder and run
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```
+yarn
+```
 
-### `yarn build`
+2. To start the application
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```
+yarn start
+```
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+### Installing cloud functions
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+1. navigate to projects `base folder` > `functions` and run _important: make you use `npm` not `yarn` becuase cloud functions needs to run on node 8_
 
-### `yarn eject`
+```
+npm install
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Intro
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Tech stack
 
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+- Firebase firestore
+- Firebase storage
+- Firebase authentication
+- Firebase cloud functions
+- Typescript
+- React 16.6
+- React router 5
+- Redux
+- Redux thunk (To be removed)
+- SlateJS
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+### Styling
 
-## Learn More
+As this is an MVP the following two component libraries are being used for convinience:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- Grommet (https://v2.grommet.io/)
+- Gestalt (https://pinterest.github.io/gestalt/)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Structure
+
+The basic project structure is similar to the standard `create-react-app` setup, but with the addition of the `functions` folder for creating and managing firebase cloud functions. I've also opted for a flat sturcture vs feature/hierachical because it makes refactoring easier during MVP phase:
+
+```
+  |- functions/
+  |  |- functions for firebase cloud functions, written in typescript
+  |
+  |- public/
+  |  |- static folder used to compile react during development
+  |
+  |- src/
+  |  |- @types/
+  |  |  |- declaration files for libraries that dont have typings available
+  |  |
+  |  |- components/
+  |  |
+  |  |- hooks/
+  |  |
+  |  |- icons/
+  |  |
+  |  |- routes/
+  |  |  |- react components that render components for main sections of the app
+  |  |
+  |  |- screens/
+  |  |  |- non-reusable components that tie directly to a url route
+  |  |
+  |  |- selectors/
+  |  |  |- reselect functions to memoise parts of the redux store
+  |  |
+  |  |- store/
+  |  |  |- redux reducers
+  |  |  |- files that begin with 'use-*' are react hook reducers
+  |  |
+  |  |- utils/
+```
+
+## Ideology
+
+#### firestore
+
+The application is driven by firestore and its listeners/watchers which update the store on a snapshot change. Due to firestore's offline capabilities there is no need to wait for promises to resolve because firebase handle optimistic updates and always resolve immediately when modifying the database
