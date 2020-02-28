@@ -24,7 +24,7 @@ const validationSchema = yup.object().shape({
     is: true,
     otherwise: yup.object().required("Address is required"),
     then: yup
-      .mixed()
+      .object()
       .nullable()
       .notRequired(),
   }),
