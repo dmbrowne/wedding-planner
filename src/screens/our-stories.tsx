@@ -63,8 +63,9 @@ const OurStories: React.FC<IProps> = ({ match, history }) => {
       _private: { owner: auth.uid, ...(!!collaborators.length ? { collaborators } : {}) },
     };
     const ref = db.collection(`stories`).doc();
-    ref.set(newStory);
-    history.push(`${match.url}/${ref.id}`);
+    ref.set(newStory).then(() => {
+      history.push(`${match.url}/${ref.id}`);
+    });
   };
   const allStories = [...ownedStories, ...collabedStories].sort((a, b) => (a.name > b.name ? 1 : a.name < b.name ? -1 : 0));
   const showUi = fetchStatePredicate("inProgress", true) || fetchStatePredicate("success", true);
