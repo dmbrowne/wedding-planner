@@ -4,12 +4,14 @@ import { Box, Text, TextInput, Button } from "grommet";
 import { Spinner } from "gestalt";
 
 export interface IProps {
-  onSuccess: (user: auth.UserCredential) => void;
+  onSuccess?: (user: auth.UserCredential) => void;
+  presetEmail?: string;
+  emailDisabled?: boolean;
 }
 
-const AuthUiForm: React.FC<IProps> = ({ onSuccess }) => {
+const AuthUiForm: React.FC<IProps> = ({ onSuccess, presetEmail, emailDisabled }) => {
   const checkAccountExistence = functions().httpsCallable("doesAccountExist");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(presetEmail || "");
   const [password, setPassword] = useState("");
   const [authMode, setAuthMode] = useState<"login" | "register" | void>();
   const [showSpinner, setShowSpinner] = useState(false);
@@ -44,7 +46,12 @@ const AuthUiForm: React.FC<IProps> = ({ onSuccess }) => {
   return (
     <>
       <Box margin={{ vertical: "medium" }}>
-        <TextInput placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} disabled={!!authMode} />
+        <TextInput
+          placeholder="Email address"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          disabled={!!authMode || emailDisabled}
+        />
       </Box>
       {!!authMode && (
         <Box margin={{ vertical: "medium" }}>

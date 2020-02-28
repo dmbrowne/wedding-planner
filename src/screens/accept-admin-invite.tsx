@@ -1,8 +1,8 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useRef } from "react";
 import { RouteComponentProps } from "react-router-dom";
 import { Box, Text, Button } from "grommet";
-import { firestore, auth } from "firebase/app";
-import { Spinner } from "gestalt";
+import { firestore, functions } from "firebase/app";
+import { Spinner, Pulsar } from "gestalt";
 import { Clear, Alert } from "grommet-icons";
 
 import { ReactComponent as Logo } from "../icons/jumpbroom.svg";
@@ -11,14 +11,59 @@ import { IAdminInvite, IUser } from "../store/types";
 import { IWedding } from "../store/types";
 import AuthUi from "../components/auth-ui";
 
-const AcceptAdminInvite: React.FC<RouteComponentProps<{ adminInviteId: string }>> = ({ match }) => {
+interface IInvitationRespondProps {
+  weddingName: string;
+  onRespond: (accept: boolean) => any;
+  pending: boolean;
+}
+const InvitationRespond: React.FC<IInvitationRespondProps> = ({ weddingName, onRespond, pending }) => {
+  const [action, setAction] = useState<"accept" | "decline">();
+
+  useEffect(() => {
+    if (action) {
+      onRespond(action === "accept");
+    }
+  }, [action]);
+
+  return (
+    <Box fill align="center" justify="center">
+      <Box
+        pad={{ vertical: "large", horizontal: "medium" }}
+        width={{ max: "500px" }}
+        style={{ borderRadius: "16px" }}
+        border={{ side: "all", color: "light-6" }}
+      >
+        <Box align="center" margin={{ bottom: "large" }} children={<Logo />} />
+        <Text textAlign="center" margin={{ bottom: "medium" }}>
+          You've been asked to collaborate on the wedding, titled:
+        </Text>
+        <Text size="large" color="brand" textAlign="center">
+          <em>{weddingName}</em>
+        </Text>
+        {pending && <Text>{action === "accept" ? "Accepting..." : "Declining..."}</Text>}
+        {pending ? (
+          <Pulsar />
+        ) : (
+          <Box>
+            <Button label="Accept invite" margin={{ top: "large" }} primary onClick={() => setAction("accept")} />
+            <Button label="Reject invite" margin={{ top: "large" }} onClick={() => setAction("decline")} />
+          </Box>
+        )}
+      </Box>
+    </Box>
+  );
+};
+
+const AcceptAdminInvite: React.FC<RouteComponentProps<{ adminInviteId: string }>> = ({ match, history }) => {
   const db = firestore();
+  const { current: respondToInvitation } = useRef(functions().httpsCallable("weddingCollaborationInvitationRespond"));
   const { user: auth } = useContext(AuthContext);
   const [fetchError, setFetchError] = useState(false);
   const { adminInviteId } = match.params;
   const [wedding, setWedding] = useState<IWedding>();
   const [invite, setInvite] = useState<IAdminInvite>();
   const [userProfile, setUserProfile] = useState<IUser>();
+  const [responseInProgress, setResponseInProgress] = useState(false);
 
   useEffect(() => {
     db.doc(`/adminInvites/${adminInviteId}`)
@@ -46,13 +91,13 @@ const AcceptAdminInvite: React.FC<RouteComponentProps<{ adminInviteId: string }>
     }
   }, [auth]);
 
-  const onUserCreateSuccess = (user: auth.UserCredential) => {
-    // authstate should automatically change and switch the view to the logged in view with accept button;
+  const invitationResponse = (accept: boolean) => {
+    setResponseInProgress(true);
+    respondToInvitation({ accept, inviteId: adminInviteId }).then(result => {
+      setResponseInProgress(false);
+      history.push(`/weddings/${result.data.weddingId}`);
+    });
   };
-
-  if (!invite) {
-    return <Box fill align="center" justify="center" pad="large" children={<Spinner show accessibilityLabel="Fetching invite" />} />;
-  }
 
   if (fetchError) {
     return (
@@ -64,6 +109,10 @@ const AcceptAdminInvite: React.FC<RouteComponentProps<{ adminInviteId: string }>
     );
   }
 
+  if (!invite || !wedding) {
+    return <Box fill align="center" justify="center" pad="large" children={<Spinner show accessibilityLabel="Fetching invite" />} />;
+  }
+
   if (auth && auth.email !== invite.email) {
     return (
       <Box fill align="center" justify="center">
@@ -73,7 +122,7 @@ const AcceptAdminInvite: React.FC<RouteComponentProps<{ adminInviteId: string }>
       </Box>
     );
   } else if (auth && auth.email === invite.email) {
-    if (userProfile && userProfile.accountType === "normal" && userProfile.weddingIds.length >= 1) {
+    if (userProfile?.accountType === "normal" && !!userProfile.weddingIds && !userProfile.weddingIds.includes(wedding.id)) {
       return (
         <Box fill align="center" justify="center">
           <Box align="center" margin={{ bottom: "large" }} children={<Logo />} />
@@ -84,33 +133,16 @@ const AcceptAdminInvite: React.FC<RouteComponentProps<{ adminInviteId: string }>
           </Text>
         </Box>
       );
+    } else {
+      return <InvitationRespond weddingName={!!wedding && wedding.name} onRespond={invitationResponse} pending={responseInProgress} />;
     }
-
-    return (
-      <Box fill align="center" justify="center">
-        <Box
-          pad={{ vertical: "large", horizontal: "medium" }}
-          width={{ max: "500px" }}
-          style={{ borderRadius: "16px" }}
-          border={{ side: "all", color: "light-6" }}
-        >
-          <Box align="center" margin={{ bottom: "large" }} children={<Logo />} />
-          <Text textAlign="center" margin={{ bottom: "medium" }}>
-            You've been asked to collaborate on the wedding, titled:
-          </Text>
-          <Text size="large" color="brand" textAlign="center">
-            <em>{!!wedding && wedding.name}</em>
-          </Text>
-          <Button label="Accept invite" margin={{ top: "large" }} primary />
-        </Box>
-      </Box>
-    );
   }
 
   return (
     <Box fill align="center" justify="center">
       <AuthUi
-        onSuccess={onUserCreateSuccess}
+        presetEmail={invite.email}
+        emailDisabled={true}
         preFormContent={
           <>
             <Text textAlign="center" margin={{ bottom: "medium" }}>
@@ -120,7 +152,7 @@ const AcceptAdminInvite: React.FC<RouteComponentProps<{ adminInviteId: string }>
               <em>{!!wedding && wedding.name}</em>
             </Text>
             <Text textAlign="center" margin={{ top: "large" }}>
-              Enter you email address to either login and accept, or create an account now and accept
+              Log in, or Register your account by clicking next
             </Text>
           </>
         }

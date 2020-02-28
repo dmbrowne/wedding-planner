@@ -50,7 +50,7 @@ export const removeWeddingFromUsersOnWeddingDelete = functions.firestore
     }
   });
 
-export const sendAdminInviteEmail = functions.firestore.document("adminInvites/adminInviteId").onCreate(async (snap, { params }) => {
+export const sendAdminInviteEmail = functions.firestore.document("adminInvites/{adminInviteId}").onCreate(async (snap, { params }) => {
   const db = admin.firestore();
   const { email, weddingId, from } = snap.data() as any;
   const weddingDoc = await db.doc(`weddings/${weddingId}`).get();
@@ -63,7 +63,7 @@ export const sendAdminInviteEmail = functions.firestore.document("adminInvites/a
   const userName = (userDoc.data() as any).name;
   const joinLink = `http://localhost:3000/join/${params.adminInviteId}`;
   const emailData = {
-    from: "Jump the broom <sandboxee77732dae204720b35b93c18fcff294.mailgun.org>",
+    from: "Jump the broom <info@jumpthebroom.com>",
     to: email,
     subject: "You have been invited to edit a wedding",
     text: `${userName} has invited you to collaborate on wedding: "${weddingName}". visit this link to accept ${joinLink}`,
@@ -80,3 +80,47 @@ export const sendAdminInviteEmail = functions.firestore.document("adminInvites/a
     throw new Error(e);
   }
 });
+export const weddingCollaborationInvitationRespond = functions.https.onCall(
+  async (data: { accept: boolean; inviteId: string }, { auth }) => {
+    const db = admin.firestore();
+    const { accept, inviteId } = data;
+
+    if (!auth) throw new functions.https.HttpsError("unauthenticated", "user must be signed in to complete this operation");
+    if (!inviteId) throw new functions.https.HttpsError("invalid-argument", "inviteId is required");
+
+    const collaborationInviteDoc = await db.doc(`adminInvites/${inviteId}`).get();
+    const { expires, email, weddingId } = collaborationInviteDoc.data() as {
+      expires: admin.firestore.Timestamp;
+      email: string;
+      from: string;
+      weddingId: string;
+    };
+
+    if (!collaborationInviteDoc.exists) {
+      throw new functions.https.HttpsError("not-found", "invitation cannot be found. It may have been deleted");
+    }
+    const { exists: weddingExists, ...weddingSnap } = await db.doc(`weddings/${weddingId}`).get();
+    if (!weddingExists) {
+      throw new functions.https.HttpsError("not-found", "wedding with weddingId: " + weddingId + "cannot be found");
+    }
+    if (expires.toMillis() < admin.firestore.Timestamp.now().toMillis()) {
+      throw new functions.https.HttpsError("failed-precondition", "Invitation has expired");
+    }
+    if (email !== auth.token.email) {
+      throw new functions.https.HttpsError(
+        "permission-denied",
+        "The email of the signed in user does not match the email on the invitation"
+      );
+    }
+
+    if (accept) {
+      await Promise.all([
+        db.doc(`users/${auth.uid}`).update({ weddingIds: admin.firestore.FieldValue.arrayUnion(weddingId) }),
+        weddingSnap.ref.update({ "_private.collaborators": admin.firestore.FieldValue.arrayUnion(auth.uid) }),
+      ]);
+    }
+    await db.doc(`adminInvites/${inviteId}`).delete();
+
+    return { accept, inviteId, weddingId };
+  }
+);

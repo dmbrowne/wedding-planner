@@ -7,11 +7,11 @@ export const AlgoliaSearchKeyContext = React.createContext({
   fetching: false,
 });
 
-const PROJECT_ID = "wedlock-316f8";
+const PROJECT_ID = process.env.REACT_APP_FIREBASE_PROJECT_ID;
 
 export const AlgoliaSearchKeyProvider: React.FC = ({ children }) => {
   const weddingId = useStateSelector(state => state.activeWedding.wedding && state.activeWedding.wedding.id);
-  const algoliaSearchKey = weddingId && window.sessionStorage.getItem(`algoliaSearchKey-${weddingId}`);
+  const algoliaSearchKey = weddingId && window.localStorage.getItem(`algoliaSearchKey-${weddingId}`);
   const [searchkey, setsearchkey] = useState(algoliaSearchKey || "");
   const [fetchInProgress, setfetchInProgress] = useState(false);
 
@@ -40,7 +40,7 @@ export const AlgoliaSearchKeyProvider: React.FC = ({ children }) => {
         .then(response => response.json())
         .then(data => {
           setfetchInProgress(false);
-          window.sessionStorage.setItem(`algoliaSearchKey-${weddingId}`, data.key);
+          window.localStorage.setItem(`algoliaSearchKey-${weddingId}`, data.key);
           setsearchkey(data.key as string);
         })
         .catch(err => {

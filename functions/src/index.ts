@@ -13,6 +13,7 @@ exports.getAlgoliaSearchKey = getAlgoliaSearchKey;
 exports.removeGuestsAndGroupsOnWeddingDelete = wedding.removeGuestsAndGroupsOnWeddingDelete;
 exports.sendAdminInviteEmail = wedding.sendAdminInviteEmail;
 exports.removeWeddingFromUsersOnWeddingDelete = wedding.removeWeddingFromUsersOnWeddingDelete;
+exports.weddingCollaborationInvitationRespond = wedding.weddingCollaborationInvitationRespond;
 
 exports.createUserOnAccountCreate = auth.createUserOnAccountCreate;
 exports.doesAccountExist = auth.doesAccountExist;

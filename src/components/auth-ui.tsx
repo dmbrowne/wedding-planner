@@ -8,7 +8,7 @@ interface IProps extends IAuthFromProps {
   preFormContent?: ReactNode;
 }
 
-const AuthUi: React.FC<IProps> = ({ preFormContent, onSuccess }) => {
+const AuthUi: React.FC<IProps> = ({ preFormContent, ...props }) => {
   return (
     <Box
       pad={{ vertical: "large", horizontal: "medium" }}
@@ -19,7 +19,7 @@ const AuthUi: React.FC<IProps> = ({ preFormContent, onSuccess }) => {
       <Box align="center" margin={{ bottom: "large" }} children={<Logo />} />
       {preFormContent}
 
-      <AuthUiForm onSuccess={onSuccess} />
+      <AuthUiForm {...props} />
     </Box>
   );
 };

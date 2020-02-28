@@ -61,7 +61,7 @@ const SiteNav: React.FC<IProps> = ({ onClose, history, rootPath = "" }) => {
         onClick={viewRoute(`${rootPath}/cover`)}
         label="Cover"
       />
-      <MenuItem icon={<Catalog />} isActive={isActive("our-stories")} onClick={viewRoute(`${rootPath}/our-stories`)} label="Stories" />
+      <MenuItem icon={<Catalog />} isActive={isActive("stories")} onClick={viewRoute(`${rootPath}/stories`)} label="Stories" />
       <MenuItem
         icon={<Box width="24px" height="24px" children={<Ring />} />}
         isActive={isActive("engagment")}

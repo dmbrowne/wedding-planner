@@ -1,4 +1,4 @@
-import { IAmenity } from "./../store/types";
+import { IAmenity, IUser } from "./../store/types";
 import { IGuestGroup } from "../store/guest-groups";
 import { IRootReducer } from "../store/reducers";
 import { createSelector } from "reselect";
@@ -97,4 +97,17 @@ export const orderedAmenitiesSelector = createSelector<IRootReducer, { [id: stri
   getAmenitiesById,
   getAmenitiesOrder,
   (amenityById, amenityOrder) => amenityOrder.map(id => amenityById[id])
+);
+
+export const weddingCollaboratorsOrderedByEmailSelector = createSelector<IRootReducer, { [id: string]: IUser }, IUser[]>(
+  state => state.activeWedding.collaborators,
+  collaborators => {
+    if (!collaborators) return [];
+
+    return Object.values(collaborators).sort((a, b) => {
+      if (a.email > b.email) return 1;
+      else if (a.email < b.email) return -1;
+      else return 0;
+    });
+  }
 );

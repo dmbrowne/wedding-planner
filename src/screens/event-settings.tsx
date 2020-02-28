@@ -1,46 +1,16 @@
 import React, { useRef } from "react";
 import * as yup from "yup";
-import { Text, FormField, Form, TextInput, Button, Box, Heading } from "grommet";
-import { useFormik, Formik } from "formik";
+import { Text, Box, Heading } from "grommet";
+import { Formik } from "formik";
 import { Switch } from "gestalt";
 import { IEvent } from "../store/types";
-import { Refresh } from "grommet-icons";
 import { firestore } from "firebase/app";
 import GoogleAutoCompleteSearch from "../components/google-autocomplete-search";
 import { humaneToFormattedAddress, humaneAddress, dateAndTimeValidation } from "../utils";
 import { RouteComponentProps } from "react-router-dom";
 import DateAndTimeFormikForm from "../components/date-and-time-form-with-formik-context";
 import { format } from "date-fns";
-
-const SubmitActions: React.FC<{ onReset: () => void; isFormDirty: boolean }> = ({ onReset, isFormDirty }) => (
-  <Box justify="end" direction="row" gap="large">
-    <Button onClick={onReset} disabled={!isFormDirty} icon={<Refresh />} />
-    <Button disabled={!isFormDirty} type="submit" label="Update" />
-  </Box>
-);
-const NameForm: React.FC<{ initialName: string; onSubmit: (values: { name: string }) => any }> = ({ initialName, onSubmit }) => {
-  const nameForm = useFormik<{ name: string }>({
-    initialValues: { name: initialName },
-    onSubmit,
-    validationSchema: yup.object().shape({
-      name: yup
-        .string()
-        .min(3)
-        .required(),
-    }),
-  });
-
-  const resetName = () => nameForm.setFieldValue("name", initialName);
-
-  return (
-    <form onSubmit={nameForm.handleSubmit}>
-      <FormField label="Event name" error={!!nameForm.touched.name && nameForm.errors.name}>
-        <TextInput {...nameForm.getFieldProps("name")} />
-      </FormField>
-      <SubmitActions onReset={resetName} isFormDirty={nameForm.dirty} />
-    </form>
-  );
-};
+import { NameForm, SubmitActions } from "../components/name-form";
 
 interface IProps extends RouteComponentProps<{ eventId: string; weddingId: string }> {
   event: IEvent;
@@ -72,7 +42,7 @@ const EventSettings: React.FC<IProps> = ({ event }) => {
   return (
     <Box style={{ width: "100%" }} width={{ max: "700px" }} margin={{ vertical: "medium", horizontal: "auto" }}>
       <Box margin="medium">
-        <NameForm initialName={event.name} onSubmit={updateName} />
+        <NameForm label="Event name" initialName={event.name} onSubmit={updateName} />
       </Box>
       <Box margin="medium">
         <Formik

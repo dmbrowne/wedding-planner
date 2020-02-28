@@ -7,26 +7,22 @@ interface IPrivateDetails {
     collaborators?: string[];
   };
 }
+
+interface IRTE {
+  slate: Node[];
+  html?: string;
+}
+
 export interface IWedding extends IPrivateDetails {
   readonly id: string;
   name: string;
-  couple: {
-    [id: string]: {
-      name: string;
-    };
-  };
+  couple: [string, string];
   cover?: {
     imageRef?: string;
-    message?: {
-      slate: Node[];
-      html?: string;
-    };
+    message?: IRTE;
     showWelcome?: boolean;
     welcomeImageRef?: string;
-    welcomeMessage?: {
-      slate: Node[];
-      html?: string;
-    };
+    welcomeMessage?: IRTE;
     backgroundColor?: string;
   };
 }
@@ -170,3 +166,15 @@ export type TEventFormData = {
   multiService?: boolean;
   place?: google.maps.places.PlaceResult;
 };
+
+export interface IStory extends IPrivateDetails {
+  readonly id: string;
+  name: string;
+  weddingId: string;
+}
+export interface IChapter {
+  readonly id: string;
+  imageRef?: string;
+  text?: IRTE;
+  order: number;
+}

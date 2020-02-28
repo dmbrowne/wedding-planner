@@ -1,7 +1,7 @@
 import React from "react";
 import { Provider as ReduxProvider } from "react-redux";
 import { Grommet, Box } from "grommet";
-import { BrowserRouter, Route } from "react-router-dom";
+import { BrowserRouter, Route, Switch } from "react-router-dom";
 import styled, { ThemeProvider } from "styled-components";
 import "gestalt/dist/gestalt.css";
 
@@ -40,11 +40,13 @@ const App: React.FC = () => {
           <ThemeProvider theme={metroTheme}>
             <GoogleApiContextProvider>
               <Grommet theme={metroTheme} full>
-                <AuthenticatedRoute path="/weddings/:weddingId" component={WeddingPlanningRoutes} />
-                <AuthenticatedRoute exact path="/weddings" component={WeddingSelect} />
-                <Route path="/join/:adminInviteId" component={AcceptAdminInvite} />
-                <Route path="/login" component={Login} />
-                <Route exact path="/" render={props => <StandardBox children={<Home {...props} />} />} />
+                <Switch>
+                  <AuthenticatedRoute path="/weddings/:weddingId" component={WeddingPlanningRoutes} />
+                  <AuthenticatedRoute exact path="/weddings" component={WeddingSelect} />
+                  <Route exact path="/join/:adminInviteId" component={AcceptAdminInvite} />
+                  <Route path="/login" component={Login} />
+                  <Route exact path="/" render={props => <StandardBox children={<Home {...props} />} />} />
+                </Switch>
               </Grommet>
             </GoogleApiContextProvider>
           </ThemeProvider>
