@@ -31,11 +31,18 @@ const routes = [
     component: WeddingNameBreadcrumb,
   },
   {
-    // render "events"
     path: "/weddings/:weddingId/guests/create",
     component: ({ match }: RouteComponentProps<{ weddingId: string }>) => (
       <Link to={`/weddings/${match.params.weddingId}/guests`}>
         <Text size="small" children="Guests" />
+      </Link>
+    ),
+  },
+  {
+    path: "/weddings/:weddingId/stories/:storyId",
+    component: ({ match }: RouteComponentProps<{ weddingId: string }>) => (
+      <Link to={`/weddings/${match.params.weddingId}/stories`}>
+        <Text size="small" children="Stories" />
       </Link>
     ),
   },
