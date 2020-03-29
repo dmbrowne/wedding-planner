@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Button, Heading, Box, Layer } from "grommet";
+import { Button, Heading, Box, Layer, Text } from "grommet";
 import styled from "styled-components";
 import { useMediaQuery } from "react-responsive";
 import { RouteComponentProps } from "react-router-dom";
@@ -66,13 +66,6 @@ const EventGuestlist: React.FC<RouteComponentProps<{ eventId: string; weddingId:
   const topFiveGroups = useWatchTopFiveDocuments(eventId, weddingId);
   const allGroups = useWatchAllDocuments(eventId, weddingId);
 
-  const servicesOrderedByDate =
-    event && event.services
-      ? Object.entries(event.services)
-          .map(([id, service]) => ({ ...service, id }))
-          .sort((a, b) => (a.startDate < b.startDate ? -1 : 1))
-      : undefined;
-
   useEffect(() => eventGuestActions.unsubscribe, []);
   useEffect(() => {
     return () => {
@@ -104,7 +97,6 @@ const EventGuestlist: React.FC<RouteComponentProps<{ eventId: string; weddingId:
 
   const rsvpRespond = (eventGuestId: string, attending: boolean, serviceId?: string, isPlusOne?: boolean) => {
     const guestRef = isPlusOne ? db.doc(`events/${eventId}/plusOnes/${eventGuestId}`) : db.doc(`eventGuests/${eventGuestId}`);
-
     guestRef.update(serviceId ? { [`rsvp.${serviceId}`]: attending } : { rsvp: attending });
   };
 
@@ -246,8 +238,24 @@ const EventGuestlist: React.FC<RouteComponentProps<{ eventId: string; weddingId:
           <Box pad={{ horizontal: "medium" }}>
             <header>
               <Heading level={1} margin={{ bottom: "small" }} children="Guestlist" />
-              <Heading level={2} size="small" color="dark-6" children="The Wedding" margin={{ top: "small" }} />
+              <Heading level={2} size="small" color="dark-6" children={event.name} margin={{ top: "small" }} />
             </header>
+            {event.syncEventId && (
+              <Box margin={{ bottom: "small" }} background="#dab472" pad="small" style={{ borderRadius: 4 }}>
+                <Text size="small">
+                  The guests for this is event are sync'd with {"<insert event name here>"}, changes made here will automatically applied to{" "}
+                  {"<insert event name here>"} aswell
+                </Text>
+              </Box>
+            )}
+            {event.syncEventRSVP && (
+              <Box margin={{ bottom: "small" }} background="#dab472" pad="small" style={{ borderRadius: 4 }}>
+                <Text size="small">
+                  RSVPs for this is event are sync'd with {"<insert event name here>"}, changes made here will automatically applied to{" "}
+                  {"<insert event name here>"} aswell
+                </Text>
+              </Box>
+            )}
             <Box height="40px" align="end">
               {!showAddGuestModal && <Button label="Add guests" primary onClick={() => setShowAddGuestModal(true)} />}
             </Box>
@@ -324,19 +332,9 @@ const EventGuestlist: React.FC<RouteComponentProps<{ eventId: string; weddingId:
           </AddGuestsContainer>
         )}
       </SOuterWrap>
-      {viewGuest &&
-        (event.allowRsvpPerService && servicesOrderedByDate ? (
-          <EventGuestModal {...getEventGuestModalProps(viewGuest)} kind="multi" services={servicesOrderedByDate} />
-        ) : (
-          <EventGuestModal {...getEventGuestModalProps(viewGuest)} kind="single" services={servicesOrderedByDate} />
-        ))}
+      {viewGuest && <EventGuestModal {...getEventGuestModalProps(viewGuest)} />}
       {showBulkRsvp && (
-        <BulkRsvpEdit
-          onClose={() => setShowBulkRsvp(false)}
-          services={servicesOrderedByDate}
-          onUpdate={onBulkRsvp}
-          selectedGuestAmount={checkedGuestIds.size}
-        />
+        <BulkRsvpEdit onClose={() => setShowBulkRsvp(false)} onUpdate={onBulkRsvp} selectedGuestAmount={checkedGuestIds.size} />
       )}
       {showAddToGroupModal && (
         <AddToGroupModal

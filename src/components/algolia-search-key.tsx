@@ -9,8 +9,7 @@ export const AlgoliaSearchKeyContext = React.createContext({
 
 const PROJECT_ID = process.env.REACT_APP_FIREBASE_PROJECT_ID;
 
-export const AlgoliaSearchKeyProvider: React.FC = ({ children }) => {
-  const weddingId = useStateSelector(state => state.activeWedding.wedding && state.activeWedding.wedding.id);
+export const AlgoliaSearchKeyProvider: React.FC<{ weddingId: string }> = ({ children, weddingId }) => {
   const algoliaSearchKey = weddingId && window.localStorage.getItem(`algoliaSearchKey-${weddingId}`);
   const [searchkey, setsearchkey] = useState(algoliaSearchKey || "");
   const [fetchInProgress, setfetchInProgress] = useState(false);
@@ -22,10 +21,6 @@ export const AlgoliaSearchKeyProvider: React.FC = ({ children }) => {
   }
 
   useEffect(() => {
-    if (!weddingId) {
-      return;
-    }
-
     if (!algoliaSearchKey) {
       setfetchInProgress(true);
       user

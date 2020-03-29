@@ -104,19 +104,6 @@ const EventGuestListGuestsTable: React.FC<IProps> = props => {
   };
 
   const getAttendance = (guest: IPlusOneGuest | IEventGuest) => {
-    if (event.allowRsvpPerService && event.services) {
-      if (typeof guest.rsvp !== "object") return "unresponded";
-
-      const serviceIds = Object.keys(event.services);
-      const attendingServiceIds =
-        typeof guest.rsvp === "object"
-          ? Object.entries(guest.rsvp).reduce((accum, [k, v]) => [...accum, ...(v ? [k] : [])], [] as string[])
-          : [];
-
-      if (attendingServiceIds.length === serviceIds.length) return "full";
-      if (attendingServiceIds.length === 0) return "none";
-      return "partial";
-    }
     return typeof guest.rsvp === "undefined" ? "unresponded" : guest.rsvp ? "full" : "none";
   };
 

@@ -74,7 +74,6 @@ interface IEventDetailProps extends RouteComponentProps<{ eventId: string }> {
 const EventDetail: React.FC<IEventDetailProps> = ({ match, history, event }) => {
   const amenities = useStateSelector(orderedAmenitiesSelector);
   const { numberOfGuests = 0, attending = 0, notAttending = 0 } = event || {};
-  const services = event && event.services && orderMapByChildKey(event.services, "startDate", "asc");
 
   return (
     <>
@@ -96,31 +95,6 @@ const EventDetail: React.FC<IEventDetailProps> = ({ match, history, event }) => 
           Not confirmed
         </Text>
       </Section>
-
-      {services && (
-        <Section
-          titleProps={{ margin: { horizontal: "medium" } }}
-          margin={{ vertical: "medium" }}
-          title="Services"
-          onClick={services.length > 5 ? () => {} : undefined}
-          buttonLabel="View all / edit amenities order"
-        >
-          {services.length === 0 && <Text margin={{ horizontal: "medium", bottom: "medium" }} children="No services added yet" />}
-          <SHorizontalScrollContainer>
-            {services.slice(0, 5).map((service, idx) => (
-              <SHorizontalScrollItem key={service.id} first={idx === 0}>
-                <RoundedCard margin={{ vertical: "xxsmall" }} elevation="xsmall" width="350px" height="200px" pad="medium">
-                  <Heading level="3" size="small" as="header" children={service.name} />
-                </RoundedCard>
-              </SHorizontalScrollItem>
-            ))}
-            <SHorizontalScrollItem align="center" justify="center" width={{ min: "200px" }} last>
-              <HorizontalListAddButton label="add service" onClick={() => history.push(`${match.url}/add-service`)} />
-            </SHorizontalScrollItem>
-            <Box width={{ min: "1px" }} />
-          </SHorizontalScrollContainer>
-        </Section>
-      )}
 
       <Section
         titleProps={{ margin: { horizontal: "medium" } }}

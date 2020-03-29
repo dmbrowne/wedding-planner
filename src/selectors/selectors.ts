@@ -29,21 +29,10 @@ export const uninvitedEventGuestsSelector = createSelector<IRootReducer, IEventG
   }
 );
 
-export const getWeddingEventSelector = createSelector<IRootReducer, { [id: string]: IEvent }, IEvent | undefined>(
-  state => state.events.eventsById,
-  eventMap => {
-    return Object.values(eventMap).find(evnt => !!evnt.main);
-  }
-);
 export const orderedEventsListSelector = createSelector<IRootReducer, string[], { [id: string]: IEvent }, IEvent[]>(
   state => state.events.eventsOrder,
   state => state.events.eventsById,
-  (order, eventMap) => {
-    return order.reduce((accum: IEvent[], id) => {
-      const evnt = eventMap[id];
-      return evnt && !evnt.main ? [...accum, evnt] : accum;
-    }, []);
-  }
+  (order, eventMap) => order.map(id => eventMap[id])
 );
 
 export const distinctPartnerGroups = createSelector<

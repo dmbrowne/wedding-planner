@@ -23,16 +23,17 @@ import OurStories from "../screens/our-stories";
 
 import { useStateSelector } from "../store/redux";
 import { fetchWeddingSuccess, setWeddingCollaborators } from "../store/active-wedding";
-import { IWedding, IUser } from "../store/types";
+import { IWedding, IUser, IEvent } from "../store/types";
 
 import { EventsRoute } from "./event-routes";
 import { AppFrame, Main } from "../app";
 import WeddingSettings from "../screens/wedding-settings";
 import EditStory from "../screens/edit-story";
+import { fetchEventSuccess, updateEventSuccess } from "../store/events";
+import AllAmenities from "../screens/all-amenities";
+import CreateAmenity from "../screens/create-amenity";
 
-export const WeddingPlanningRoutes: React.FC<RouteComponentProps<{
-  weddingId: string;
-}>> = ({ match }) => {
+export const WeddingPlanningRoutes: React.FC<RouteComponentProps<{ weddingId: string }>> = ({ match }) => {
   const { current: db } = useRef(firestore());
   const dispatch = useDispatch();
   const { weddingId } = match.params;
@@ -41,16 +42,28 @@ export const WeddingPlanningRoutes: React.FC<RouteComponentProps<{
   const [menuOpen, setMenuOpen] = useState(false);
   const collaboratorIds = (wedding && wedding._private && wedding._private.collaborators) || [];
 
-  if (!wedding) {
-    // hack for now, until custom hooks that communicate with firebase and defensively coded against null weddingIds
-    dispatch(fetchWeddingSuccess({ id: weddingId } as IWedding));
-  }
+  // if (!wedding) {
+  //   // hack for now, until custom hooks that communicate with firebase and defensively coded against null weddingIds
+  //   dispatch(fetchWeddingSuccess({ id: weddingId } as IWedding));
+  // }
 
   useEffect(() => {
     return db.doc(`weddings/${weddingId}`).onSnapshot(snap => {
       dispatch(fetchWeddingSuccess({ id: snap.id, ...(snap.data() as IWedding) }));
     });
   }, []);
+
+  useEffect(() => {
+    return db
+      .collection("events")
+      .where("weddingId", "==", weddingId)
+      .where("main", "==", true)
+      .limit(1)
+      .onSnapshot(snap => {
+        const [doc] = snap.docs;
+        dispatch(fetchEventSuccess({ id: doc.id, ...(doc.data() as IEvent) }));
+      });
+  });
 
   useEffect(() => {
     if (collaboratorIds.length > 0) {
@@ -65,8 +78,8 @@ export const WeddingPlanningRoutes: React.FC<RouteComponentProps<{
 
   return (
     <Route>
-      <AlgoliaSearchKeyProvider>
-        <GuestsProvider>
+      <AlgoliaSearchKeyProvider weddingId={weddingId}>
+        <GuestsProvider weddingId={weddingId}>
           <AppFrame>
             <Box basis={isDesktopOrHigher ? "1/4" : "50px"} width={{ max: "300px" }} elevation="small">
               <Box
@@ -92,6 +105,8 @@ export const WeddingPlanningRoutes: React.FC<RouteComponentProps<{
                 <AuthenticatedRoute exact path={`${match.path}/stories`} component={OurStories} />
                 <AuthenticatedRoute exact path={`${match.path}/stories/:storyId`} component={EditStory} />
                 <AuthenticatedRoute exact path={`${match.path}/settings`} component={WeddingSettings} />
+                <AuthenticatedRoute exact path={`${match.path}/amenities`} component={AllAmenities} />
+                <AuthenticatedRoute path={`${match.path}/amenities/add-amenity`} component={CreateAmenity} />
                 <AuthenticatedRoute component={WeddingHome} />
               </Switch>
             </Main>

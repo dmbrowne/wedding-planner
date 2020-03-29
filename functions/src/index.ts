@@ -4,11 +4,14 @@ import * as wedding from "./wedding";
 import * as auth from "./auth";
 import * as guestGroups from "./group-guests";
 import * as eventGuests from "./event-guests";
+import * as events from "./events";
 import getAlgoliaSearchKey from "./get-search-key";
 
 admin.initializeApp();
 
 exports.getAlgoliaSearchKey = getAlgoliaSearchKey;
+
+exports.createMainWedding = events.createMainWedding;
 
 exports.removeGuestsAndGroupsOnWeddingDelete = wedding.removeGuestsAndGroupsOnWeddingDelete;
 exports.sendAdminInviteEmail = wedding.sendAdminInviteEmail;

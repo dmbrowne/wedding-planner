@@ -6,7 +6,7 @@ import { ReactComponent as HimHer } from "../icons/him_her.svg";
 import { ReactComponent as Ring } from "../icons/ring.svg";
 import { ReactComponent as Table } from "../icons/table.svg";
 import { ReactComponent as Invite } from "../icons/invite.svg";
-import { Box, Text, Heading } from "grommet";
+import { Box, Text, Heading, BoxProps } from "grommet";
 import { Calendar, Group, Catalog, Location, Gift } from "grommet-icons";
 
 interface IProps extends RouteComponentProps {
@@ -14,14 +14,14 @@ interface IProps extends RouteComponentProps {
   onClose: () => void;
 }
 
-interface IMenuItemProps {
+interface IMenuItemProps extends BoxProps {
   icon?: ReactNode;
   onClick: () => void;
   isActive: boolean;
   label: string;
 }
 
-const MenuItem: React.FC<IMenuItemProps> = ({ icon, onClick, isActive, label }) => (
+const MenuItem: React.FC<IMenuItemProps> = ({ icon, onClick, isActive, label, ...props }) => (
   <Box
     hoverIndicator="light-3"
     background={isActive ? "light-4" : "transparent"}
@@ -30,6 +30,7 @@ const MenuItem: React.FC<IMenuItemProps> = ({ icon, onClick, isActive, label }) 
     direction="row"
     align="center"
     onClick={onClick}
+    {...props}
   >
     {icon}
     <Text size="small" color={isActive ? "dark-1" : "dark-6"} weight={600} children={label} />
@@ -46,13 +47,20 @@ const SiteNav: React.FC<IProps> = ({ onClose, history, rootPath = "" }) => {
   return (
     <Box pad={{ top: "small" }}>
       <Box pad={{ horizontal: "small" }} children={<Logo />} />
+      <MenuItem
+        icon={<Box width="24px" height="24px" children={<HimHer />} />}
+        isActive={isActive("settings")}
+        onClick={viewRoute(`${rootPath}/settings`)}
+        label="Wedding details"
+        margin={{ top: "medium" }}
+      />
       <Heading level={6} margin={{ top: "medium", bottom: "xsmall", left: "large" }} size="small">
         Website sections
       </Heading>
       <MenuItem
         icon={<ion-icon class="medium" name="options-outline" />}
-        isActive={isActive("settings")}
-        onClick={viewRoute(`${rootPath}/settings`)}
+        isActive={isActive("sections")}
+        onClick={viewRoute(`${rootPath}/sections`)}
         label="Configure"
       />
       <MenuItem
@@ -62,12 +70,6 @@ const SiteNav: React.FC<IProps> = ({ onClose, history, rootPath = "" }) => {
         label="Cover"
       />
       <MenuItem icon={<Catalog />} isActive={isActive("stories")} onClick={viewRoute(`${rootPath}/stories`)} label="Stories" />
-      <MenuItem
-        icon={<Box width="24px" height="24px" children={<Ring />} />}
-        isActive={isActive("engagment")}
-        onClick={viewRoute(`${rootPath}/engagment`)}
-        label="The engagement"
-      />
       <MenuItem icon={<Group />} isActive={isActive("vip")} onClick={viewRoute(`${rootPath}/vip`)} label="Key people" />
       <MenuItem icon={<Location />} isActive={isActive("amenities")} onClick={viewRoute(`${rootPath}/amenities`)} label="Amenities" />
       <MenuItem icon={<Gift />} isActive={isActive("gifts")} onClick={viewRoute(`${rootPath}/gifts`)} label="Gifts" />

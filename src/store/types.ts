@@ -17,6 +17,7 @@ export interface IWedding extends IPrivateDetails {
   readonly id: string;
   name: string;
   couple: [string, string];
+  allowRsvpPerService?: boolean;
   cover?: {
     imageRef?: string;
     message?: IRTE;
@@ -74,6 +75,7 @@ export enum EAmenityTypes {
 export interface IAmenity {
   id: string;
   icon?: string;
+  weddingId: string;
   place_id: string;
   name: string;
   formatted_address: string;
@@ -94,23 +96,21 @@ export interface IEvent extends IPrivateDetails {
   weddingId: string;
   name: string;
   description?: string;
-  main?: boolean;
+  default?: boolean;
   startDate: firebase.firestore.Timestamp;
   startTime?: string;
   numberOfGuests?: number;
   numberOfGroups?: number;
   numberOfPlusOnes?: number;
-  allowRsvpPerService?: boolean;
   attending?: number;
   notAttending?: number;
+  syncEventId?: string;
+  syncEventRSVP?: boolean;
   location?: {
     lat: number;
     lng: number;
   };
   address?: IAddress;
-  services?: {
-    [serviceId: string]: IService;
-  };
   guests?: {
     [guestId: string]: IEventGuest;
   };
@@ -163,8 +163,9 @@ export type TEventFormData = {
   date: string;
   serviceHasTime?: boolean;
   time?: string;
-  multiService?: boolean;
   place?: google.maps.places.PlaceResult;
+  syncGuests: boolean;
+  syncRSVP: boolean;
 };
 
 export interface IStory extends IPrivateDetails {

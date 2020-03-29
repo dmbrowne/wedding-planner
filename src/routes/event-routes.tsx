@@ -9,10 +9,7 @@ import CreateAmenity from "../screens/create-amenity";
 import CreateEventService from "../screens/create-event-service";
 import CreateEvent from "../screens/create-event";
 
-const EventRoute: React.FC<RouteComponentProps<{
-  weddingId: string;
-  eventId: string;
-}>> = ({ match }) => (
+const EventRoute: React.FC<RouteComponentProps<{ weddingId: string; eventId: string }>> = ({ match }) => (
   <AmenitiesWatcher eventId={match.params.eventId}>
     <Switch>
       <AuthenticatedRoute path={`${match.path}/guestlist`} component={EventGuestlist} />
@@ -23,14 +20,11 @@ const EventRoute: React.FC<RouteComponentProps<{
   </AmenitiesWatcher>
 );
 
-export const EventsRoute: React.FC<RouteComponentProps<{
-  weddingId: string;
-}>> = ({ match }) => (
+export const EventsRoute: React.FC<RouteComponentProps<{ weddingId: string }>> = ({ match }) => (
   <EventsWatcher weddingId={match.params.weddingId}>
     <Switch>
       <AuthenticatedRoute exact path={`${match.path}/`} component={Events} />
       <AuthenticatedRoute exact path={`${match.path}/create`} component={CreateEvent} />
-      <AuthenticatedRoute exact path={`${match.path}/create-wedding`} render={props => <CreateEvent {...props} mainEvent={true} />} />
       <AuthenticatedRoute path={`${match.path}/:eventId`} component={EventRoute} />
     </Switch>
   </EventsWatcher>

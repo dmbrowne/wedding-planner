@@ -14,53 +14,52 @@ import AuthContext from "../components/auth-context";
 import { humaneAddress, dateAndTimeValidation } from "../utils";
 import DateAndTimeForm from "../components/date-and-time-form";
 import SContainer from "../components/container";
-import { weddingCollaboratorsOrderedByEmailSelector } from "../selectors/selectors";
 import CollaboratorEditableList from "../components/collaborator-editable-list";
 
 const validationSchema = yup.object().shape({
   name: yup.string().required(),
   description: yup.string(),
   ...dateAndTimeValidation,
-  multiService: yup.boolean(),
-  place: yup.object().when("multiService", {
-    is: true,
-    otherwise: yup.object().required("Address is required"),
-    then: yup
-      .object()
-      .nullable()
-      .notRequired(),
-  }),
+  place: yup.object().required("Address is required"),
+  syncRSVP: yup.boolean(),
+  syncGuests: yup.boolean(),
 });
 
-interface IProps extends RouteComponentProps<{ weddingId: string }> {
-  mainEvent?: boolean;
-}
-
-const CreateEvent: React.FC<IProps> = ({ match, history, mainEvent }) => {
+const CreateEvent: React.FC<RouteComponentProps<{ weddingId: string }>> = ({ match, history }) => {
   const db = firestore();
   const { weddingId } = match.params;
   const { user: auth } = useContext(AuthContext);
-  const weddingName = useStateSelector(state => state.activeWedding.wedding?.name);
   const [selectedCollaboratorIds, setSelectedCollaboratorIds] = useState(new Set<string>());
 
-  const onSubmit = ({ place, multiService, time, ...values }: TEventFormData) => {
+  const getDefaultWeddingEvent = async () => {
+    const snap = await db
+      .collection("events")
+      .where("weddingId", "==", weddingId)
+      .where("default", "==", true)
+      .limit(1)
+      .get();
+    if (snap.empty) throw new Error("default event not found.");
+    return snap.docs[0].data();
+  };
+
+  const onSubmit = async ({ place, time, syncGuests, syncRSVP, ...values }: TEventFormData) => {
     if (!auth) return;
+
+    let defaultWeddingEvent;
+    if (syncGuests) defaultWeddingEvent = await getDefaultWeddingEvent();
 
     const eventDetails: Omit<IEvent, "id"> = {
       name: values.name,
       weddingId,
-      main: !!mainEvent,
       description: values.description,
       startDate: firestore.Timestamp.fromDate(new Date(values.date)),
+      ...(syncGuests && defaultWeddingEvent ? { syncEventId: defaultWeddingEvent.id } : {}),
+      ...(syncGuests ? { syncEventRSVP: syncRSVP } : {}),
       _private: { owner: auth.uid },
     };
 
-    if (selectedCollaboratorIds.size > 0) eventDetails._private.collaborators = Array.from(selectedCollaboratorIds);
-    if (multiService) {
-      eventDetails.allowRsvpPerService = true;
-      eventDetails.services = {};
-    }
     if (time) eventDetails.startTime = time;
+    if (selectedCollaboratorIds.size > 0) eventDetails._private.collaborators = Array.from(selectedCollaboratorIds);
     if (place && place.address_components) eventDetails.address = humaneAddress(place.address_components);
     if (place && place.geometry) {
       eventDetails.location = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() };
@@ -71,19 +70,18 @@ const CreateEvent: React.FC<IProps> = ({ match, history, mainEvent }) => {
   };
 
   const formik = useFormik<TEventFormData>({
-    initialValues: { name: mainEvent ? weddingName || "" : "", description: "", date: "", multiService: false, place: undefined },
+    initialValues: { name: "", description: "", date: "", place: undefined, syncRSVP: true, syncGuests: true },
     validationSchema,
     onSubmit,
-    enableReinitialize: mainEvent,
   });
 
   return (
     <SContainer>
-      <Heading level={1} children={mainEvent ? "Wedding event details" : "Create event"} />
+      <Heading level={1} children="Create event" />
 
       <form onSubmit={formik.handleSubmit}>
         <FormField
-          label={mainEvent ? "Wedding name" : "Event name"}
+          label="Event name"
           help="This will be the title used on invitations"
           margin={{ vertical: "large" }}
           error={!!formik.touched.name && formik.errors.name}
@@ -100,50 +98,59 @@ const CreateEvent: React.FC<IProps> = ({ match, history, mainEvent }) => {
           <TextArea {...formik.getFieldProps("description")} rows={6} />
         </Box>
 
-        <Heading level={3} size="small" margin={{ top: "large" }} children="Services" />
-        <Text as="p">Will the event be split up in to different services?</Text>
-        <Text as="p">
-          This is useful in the case where the event has a different location for different parts of the day (e.g. Wedding reception at the
-          local church, dinner reception at the town restaurant, after party at Barney's tavern)
-        </Text>
-        <Label htmlFor="multi-service">
-          <Text margin={{ bottom: "small" }}>Multi service</Text>
-        </Label>
-        <Switch
-          id="multi-service"
-          name="multiService"
-          onChange={() => formik.setFieldValue("multiService", !formik.values.multiService)}
-          switched={formik.values.multiService}
-        />
         <Box margin={{ vertical: "medium" }}>
-          {formik.values.multiService && <Text color="dark-6">You can add services once the event has been created</Text>}
-          {!formik.values.multiService &&
-            (formik.values.place ? (
-              <>
-                <Text margin={{ top: "medium" }} children={<strong>{formik.values.place.name}</strong>} />
-                {formik.values.place.formatted_address && (
-                  <Text color="dark-4" margin={{ bottom: "small" }} children={formik.values.place.formatted_address} />
-                )}
-                <Button
-                  alignSelf="start"
-                  label="change"
-                  gap="xsmall"
-                  icon={<FormPrevious />}
-                  onClick={() => formik.setFieldValue("selectedPlace", undefined)}
+          {formik.values.place ? (
+            <>
+              <Text margin={{ top: "medium" }} children={<strong>{formik.values.place.name}</strong>} />
+              {formik.values.place.formatted_address && (
+                <Text color="dark-4" margin={{ bottom: "small" }} children={formik.values.place.formatted_address} />
+              )}
+              <Button
+                alignSelf="start"
+                label="change"
+                gap="xsmall"
+                icon={<FormPrevious />}
+                onClick={() => formik.setFieldValue("selectedPlace", undefined)}
+              />
+            </>
+          ) : (
+            <>
+              <Box background="white">
+                <GoogleAutoCompleteSearch
+                  placeholder="Search for an address where the event will take place"
+                  onPlaceLoadSuccess={place => formik.setFieldValue("place", place)}
                 />
-              </>
-            ) : (
-              <>
-                <Box background="white">
-                  <GoogleAutoCompleteSearch
-                    placeholder="Search for an address where the event will take place"
-                    onPlaceLoadSuccess={place => formik.setFieldValue("place", place)}
-                  />
-                </Box>
-                {formik.touched.place && formik.errors.place && <Text color="status-error">{formik.errors.place}</Text>}
-              </>
-            ))}
+              </Box>
+              {formik.touched.place && formik.errors.place && <Text color="status-error">{formik.errors.place}</Text>}
+            </>
+          )}
         </Box>
+
+        <Label htmlFor="sync-guests">
+          <Text>Sync guests with main event</Text>
+        </Label>
+        <Switch onChange={({ value }) => formik.setFieldValue("syncGuests", value)} id="sync-guests" switched={formik.values.syncGuests} />
+        <Text size="small">
+          Syncing guests with main event means the guestlist for this event will be copied from the main event and update when the guestlist
+          for the main event is modified
+        </Text>
+
+        {formik.values.syncGuests && (
+          <Box margin={{ top: "medium" }}>
+            <Label htmlFor="separate-rsvp">
+              <Text>Sync RSVP with main event</Text>
+            </Label>
+            <Switch
+              onChange={({ value }) => formik.setFieldValue("syncRSVP", value)}
+              id="separate-rsvp"
+              switched={formik.values.syncRSVP}
+            />
+            <Text size="small">
+              Should RSVP's for this event will be tied to the main event (RSVP's for this event will be sync'd with RSVP's for the main
+              event)
+            </Text>
+          </Box>
+        )}
 
         <Heading level={3} size="small" margin={{ top: "large" }} children="Collaborators" />
         <Text>Give your wedding collaborators access to view and edit this event's details, guests and more</Text>
@@ -154,7 +161,7 @@ const CreateEvent: React.FC<IProps> = ({ match, history, mainEvent }) => {
           />
         </Box>
         <Box margin={{ vertical: "large" }} align="end">
-          <Button primary type="submit" label={mainEvent ? "Create wedding event" : "Add event"} />
+          <Button primary type="submit" label="Add event" />
         </Box>
       </form>
     </SContainer>

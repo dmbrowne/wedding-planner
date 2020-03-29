@@ -1,7 +1,6 @@
 import React, { useState, ComponentType } from "react";
 import { RouteComponentProps } from "react-router-dom";
 import { Heading, Box, Text, FormField, Button, TextArea, Select } from "grommet";
-import { Spinner } from "gestalt";
 
 import { useStateSelector } from "../store/redux";
 import GoogleMap from "../components/google-map";
@@ -11,10 +10,11 @@ import { ReactComponent as Bed } from "../icons/bed.svg";
 import { ReactComponent as Drink } from "../icons/drink.svg";
 import { ReactComponent as Parking } from "../icons/parking.svg";
 import { ReactComponent as Restaurant } from "../icons/restaurant.svg";
-import { humaneAddress, orderMapByChildKey } from "../utils";
+import { humaneAddress } from "../utils";
 import { firestore } from "firebase/app";
-import { IService, IAmenity, EAmenityTypes } from "../store/types";
+import { IAmenity, EAmenityTypes } from "../store/types";
 import SContainer from "../components/container";
+import { orderedEventsListSelector } from "../selectors/selectors";
 
 interface IProps extends RouteComponentProps<{ eventId: string; weddingId: string }> {}
 
@@ -28,15 +28,15 @@ const titles: { [key: string]: string } = {
 };
 
 const CreateAmenity: React.FC<IProps> = ({ match, history }) => {
-  const { eventId, weddingId } = match.params;
-  const event = useStateSelector(state => state.events.eventsById[eventId]);
-  const orderedServices = event && event.services ? orderMapByChildKey(event.services, "name", "asc") : undefined;
+  const { weddingId } = match.params;
+  const allEvents = useStateSelector(orderedEventsListSelector);
   const [amenitiesType, setAmenitiesType] = useState<EAmenityTypes>();
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<google.maps.places.PlaceResult | null>(null);
   const [notes, setNotes] = useState("");
-  const [selectedNearbyService, setSelectedNearbyService] = useState<IService | null>(null);
-  const nearbyLocation = event && event.services ? selectedNearbyService && selectedNearbyService.location : event && event.location;
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const selectedEvent = useStateSelector(state => (selectedEventId ? state.events.eventsById[selectedEventId] : undefined));
+
   const iconTuples: Array<[EAmenityTypes, ComponentType]> = [
     [EAmenityTypes.restaurant, Restaurant],
     [EAmenityTypes.bar, Drink],
@@ -47,28 +47,25 @@ const CreateAmenity: React.FC<IProps> = ({ match, history }) => {
 
   const submit = () => {
     if (!selectedPlace) return;
-    const { formatted_address, place_id, name, address_components, geometry, icon } = selectedPlace;
+
+    const { name, address_components, geometry, icon } = selectedPlace;
     const doc: Omit<IAmenity, "id"> = {
       icon,
       name,
-      // Using typescript casting because the google docs do not mark these fields as optional
-      place_id: place_id as string,
-      formatted_address: formatted_address as string,
-      address: humaneAddress(address_components as google.maps.GeocoderAddressComponent[]),
+      weddingId,
       notes,
+      // Using typescript casting because the google docs do not mark these fields as optional
+      place_id: selectedPlace.place_id as string,
+      formatted_address: selectedPlace.formatted_address as string,
+      address: humaneAddress(address_components as google.maps.GeocoderAddressComponent[]),
       type: amenitiesType || EAmenityTypes.other,
-      ...(geometry ? { location: { lat: geometry.location.lat(), lng: geometry.location.lng() } } : {}),
       createdAt: firestore.Timestamp.fromDate(new Date()),
+      ...(geometry ? { location: { lat: geometry.location.lat(), lng: geometry.location.lng() } } : {}),
     };
-    firestore()
-      .collection(`events/${eventId}/amenities`)
-      .add(doc);
-    history.push(`/weddings/${weddingId}/events/${eventId}`);
+    // prettier-ignore
+    firestore().collection(`amenities`).add(doc);
+    history.push(`/weddings/${weddingId}/amenities`);
   };
-
-  if (!event) {
-    return <Box pad="xlarge" children={<Spinner show accessibilityLabel="Loading event data" />} />;
-  }
 
   return (
     <SContainer>
@@ -105,77 +102,71 @@ const CreateAmenity: React.FC<IProps> = ({ match, history }) => {
           {selectedPlace && (
             <>
               <Text size="large">{selectedPlace.name}</Text>
-              <Text color="dark-6">
-                <div dangerouslySetInnerHTML={{ __html: selectedPlace.adr_address || "" }} />
-              </Text>
+              <Text color="dark-6" dangerouslySetInnerHTML={{ __html: selectedPlace.adr_address || "" }} />
             </>
           )}
           {!selectedPlace && (
-            <>
-              <Box margin={{ bottom: "small" }}>
-                <Heading level={3} size="small" children="Search for the amenity" />
-                <Box background="white">
-                  <FormField label="search for a place or an address">
-                    <GoogleAutoCompleteSearch disabled={!amenitiesType} onPlaceLoadSuccess={setSelectedPlace} />
-                  </FormField>
-                </Box>
+            <Box margin={{ bottom: "small" }}>
+              <Heading level={3} size="small" children="Search for the amenity" />
+              <Box background="white">
+                <FormField label="search for a place or an address">
+                  <GoogleAutoCompleteSearch disabled={!amenitiesType} onPlaceLoadSuccess={setSelectedPlace} />
+                </FormField>
               </Box>
-              {amenitiesType && amenitiesType !== EAmenityTypes.other && (
+            </Box>
+          )}
+          {!selectedPlace && amenitiesType && amenitiesType !== EAmenityTypes.other && (
+            <>
+              <Heading level={3} size="small" children="Or choose a nearby location" />
+              <Select
+                value={selectedEventId || ""}
+                options={allEvents}
+                valueKey="id"
+                labelKey="name"
+                valueLabel={<Box pad="small">{selectedEvent ? selectedEvent.name : "Select an event"}</Box>}
+                onChange={({ option }) => setSelectedEventId(option.id)}
+              />
+              {selectedEvent && !selectedEvent.location && (
+                <Text margin={{ top: "small" }}>
+                  Cannot get list of nearby places because an address for the selected event has not been added yet
+                </Text>
+              )}
+              {selectedEvent && selectedEvent.location && (
                 <>
-                  <Heading level={3} size="small" children="Or choose a nearby location" />
-                  {orderedServices && (
-                    <Box width="medium" background="white">
-                      <Select
-                        options={orderedServices}
-                        labelKey="name"
-                        value={selectedNearbyService || ""}
-                        onChange={({ option }) => setSelectedNearbyService(option)}
+                  <div style={{ width: "100%", height: "40vh" }}>
+                    <GoogleMap
+                      lat={selectedEvent.location.lat}
+                      lng={selectedEvent.location.lng}
+                      onLoaded={gmap => setMap(gmap)}
+                      mapOptions={{
+                        clickableIcons: false,
+                        fullscreenControl: false,
+                        mapTypeControl: false,
+                        maxZoom: 17,
+                        streetViewControl: false,
+                        scrollwheel: false,
+                      }}
+                    />
+                  </div>
+                  {map && (
+                    <Box style={{ display: "block" }} height={{ max: "400px" }} overflow="auto">
+                      <NearbyPlaces
+                        map={map}
+                        latLng={{ lat: selectedEvent.location.lat, lng: selectedEvent.location.lng }}
+                        type={amenitiesType}
+                        renderItem={(result, idx, getDetails) => (
+                          <Box pad="small" background="white" onClick={() => getDetails(setSelectedPlace)}>
+                            <Box border={idx > 0 ? "top" : undefined} direction="row" gap="medium" align="start">
+                              <Text size="large" children={(idx + 1).toString()} />
+                              <Box>
+                                <Text children={result.name} />
+                                <Text size="small" color="dark-6" children={result.vicinity} />
+                              </Box>
+                            </Box>
+                          </Box>
+                        )}
                       />
                     </Box>
-                  )}
-                  {selectedNearbyService && !nearbyLocation && (
-                    <Text size="small" color="status-error" margin={{ top: "small" }}>
-                      You haven't set an address for this service. Therefore you can't get a list of nearby locations
-                    </Text>
-                  )}
-                  {nearbyLocation && (
-                    <>
-                      <div style={{ width: "100%", height: "40vh" }}>
-                        <GoogleMap
-                          lat={nearbyLocation.lat}
-                          lng={nearbyLocation.lng}
-                          onLoaded={gmap => setMap(gmap)}
-                          mapOptions={{
-                            clickableIcons: false,
-                            fullscreenControl: false,
-                            mapTypeControl: false,
-                            maxZoom: 17,
-                            streetViewControl: false,
-                            scrollwheel: false,
-                          }}
-                        />
-                      </div>
-                      {map && (
-                        <Box style={{ display: "block" }} height="medium" overflow="auto">
-                          <NearbyPlaces
-                            map={map}
-                            latLng={{ lat: nearbyLocation.lat, lng: nearbyLocation.lng }}
-                            type={amenitiesType}
-                            renderItem={(result, idx, getDetails) => (
-                              <Box pad={{ horizontal: "small" }} background="white" onClick={() => getDetails(setSelectedPlace)}>
-                                <Box pad={{ vertical: "small" }} border="bottom" direction="row" gap="medium" align="start">
-                                  <Text size="large" children={(idx + 1).toString()} />
-                                  <Box>
-                                    <Text children={result.name} />
-                                    <Text size="small" color="dark-6" children={result.vicinity} />
-                                  </Box>
-                                </Box>
-                              </Box>
-                            )}
-                          />
-                        </Box>
-                      )}
-                    </>
                   )}
                 </>
               )}

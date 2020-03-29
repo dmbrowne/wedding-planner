@@ -40,9 +40,8 @@ export const GuestsContext = React.createContext<IGuestContext>({
   unsetCouple: () => Promise.resolve(),
 });
 
-export const GuestsProvider: React.FC = ({ children }) => {
+export const GuestsProvider: React.FC<{ weddingId: string }> = ({ children, weddingId }) => {
   const dispatch = useDispatch();
-  const weddingId = useStateSelector(state => state.activeWedding.wedding && state.activeWedding.wedding.id);
   const collectionRef = firebase.firestore().collection(`guests`);
   const query = collectionRef
     .where("weddingId", "==", weddingId)

@@ -13,7 +13,7 @@ import { Add, Subtract } from "grommet-icons";
 
 export const EventPartnerListing: React.FC<{ eventId: string }> = ({ eventId }) => {
   const dispatch = useDispatch();
-  const weddingId = useStateSelector(state => state.activeWedding.wedding && state.activeWedding.wedding.id);
+  const weddingId = useStateSelector(state => state.activeWedding.wedding?.id);
   const { numberOfGuests = 0, numberOfPlusOnes = 0 } = useStateSelector(state => state.events.eventsById[eventId]);
   const eventGuests = useStateSelector(state => state.events.eventGuests);
   const eventGuestIdsForEvent = useStateSelector(state => state.events.eventGuestsByEventId[eventId]);
@@ -38,7 +38,6 @@ export const EventPartnerListing: React.FC<{ eventId: string }> = ({ eventId }) 
         .orderBy("name", "asc")
         .get()
         .then(querySnap => {
-          console.info("huh");
           querySnap.docChanges().forEach(({ doc, type }) => {
             if (type === "added") {
               dispatch(fetchEventGuestSuccess({ id: doc.id, ...(doc.data() as IEventGuest) }));

@@ -16,23 +16,27 @@ import {
 import { IEvent, IPlusOneGuest, IAmenity } from "../store/types";
 import { useStateSelector } from "../store/redux";
 
-const EventsWatcher: React.FC<{ weddingId: string }> = ({ weddingId, children }) => {
-  const dispatch = useDispatch();
+interface IProps {
+  weddingId: string;
+  mutateQuery?: (q: firebase.firestore.Query<firebase.firestore.DocumentData>) => firebase.firestore.Query<firebase.firestore.DocumentData>;
+}
 
+const EventsWatcher: React.FC<IProps> = ({ weddingId, mutateQuery, children }) => {
+  const dispatch = useDispatch();
+  // prettier-ignore
+  let query = firebase.firestore().collection("events").where("weddingId", "==", weddingId).orderBy("startDate");
+  if (mutateQuery) {
+    query = mutateQuery(query);
+  }
   useEffect(() => {
-    const unsubscribe = firebase
-      .firestore()
-      .collection("events")
-      .where("weddingId", "==", weddingId)
-      .orderBy("startDate")
-      .onSnapshot(snap => {
-        dispatch(applyEventListingOrder(snap.docs.map(({ id }) => id)));
-        snap.docChanges().forEach(({ doc, type }) => {
-          if (type === "added") dispatch(fetchEventSuccess({ id: doc.id, ...(doc.data() as IEvent) }));
-          if (type === "modified") dispatch(updateEventSuccess({ id: doc.id, ...(doc.data() as IEvent) }));
-          if (type === "removed") dispatch(deleteEventSuccess(doc.id));
-        });
+    const unsubscribe = query.onSnapshot(snap => {
+      snap.docChanges().forEach(({ doc, type }) => {
+        if (type === "added") dispatch(fetchEventSuccess({ id: doc.id, ...(doc.data() as IEvent) }));
+        if (type === "modified") dispatch(updateEventSuccess({ id: doc.id, ...(doc.data() as IEvent) }));
+        if (type === "removed") dispatch(deleteEventSuccess(doc.id));
       });
+      dispatch(applyEventListingOrder(snap.docs.map(({ id }) => id)));
+    });
 
     return unsubscribe;
   }, []);

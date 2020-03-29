@@ -40,7 +40,7 @@ const CollaboratorSelectList: React.FC<IProps> = ({ selectedIds, onSelect, onClo
   );
 
   return (
-    <Box border={{ side: "horizontal" }} pad={{ bottom: "xsmall" }}>
+    <Box border={{ side: "bottom" }} pad={{ bottom: "xsmall" }}>
       {!collaborators.length ? (
         noCollaboratorsMsg
       ) : (
