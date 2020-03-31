@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useRef } from "react";
+import PropTypes from "prop-types";
 import firebase from "firebase/app";
 import ImageUploadComponent, { IComponentProps } from "./component";
 
@@ -19,7 +20,7 @@ const ImageUpload: React.FC<IProps> = ({
   ...props
 }) => {
   const allowedFileTypes = fileTypeWhiteList || ["image/png", "image/jpeg"];
-  const storageRef = firebase.storage().ref();
+  const { current: storageRef } = useRef(firebase.storage().ref());
 
   const onUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
