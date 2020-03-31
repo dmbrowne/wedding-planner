@@ -66,11 +66,13 @@
     ]
   },
   "devDependencies": {
-    "@storybook/addon-actions": "^5.3.13",
-    "@storybook/addon-links": "^5.3.13",
-    "@storybook/addons": "^5.3.13",
-    "@storybook/preset-create-react-app": "^1.5.2",
-    "@storybook/react": "^5.3.13",
+    "@babel/preset-react": "^7.9.4",
+    "@storybook/addon-actions": "5.3.17",
+    "@storybook/addon-docs": "5.3.17",
+    "@storybook/addon-knobs": "^5.3.18",
+    "@storybook/addon-links": "5.3.17",
+    "@storybook/addons": "5.3.17",
+    "@storybook/react": "5.3.17",
     "@types/algoliasearch": "^3.34.9",
     "@types/debounce": "^1.2.0",
     "@types/gestalt": "^0.75.8",
@@ -82,9 +84,11 @@
     "@types/shortid": "^0.0.29",
     "@types/styled-components": "^4.4.2",
     "@types/yup": "^0.26.27",
+    "babel-preset-react-app": "^9.1.2",
     "husky": "^4.0.7",
     "lint-staged": "^9.5.0",
-    "prettier": "^1.19.1"
+    "prettier": "^1.19.1",
+    "react-docgen-typescript-loader": "^3.7.2"
   },
   "husky": {
     "hooks": {

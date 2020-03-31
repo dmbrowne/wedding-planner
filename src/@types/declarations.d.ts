@@ -6,3 +6,5 @@ declare namespace JSX {
     } & ({ src: string } | { name: string });
   }
 }
+
+declare module "@storybook/addon-docs/blocks";
