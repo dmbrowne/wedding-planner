@@ -12,7 +12,7 @@ import CreateNewGuestRow from "../components/create-new-guest-row";
 import { addNewGuests } from "../store/guests-actions";
 import AddPartner from "../components/add-partner";
 import { RouteChildrenProps } from "react-router-dom";
-import SContainer from "../components/container";
+import SContainer from "../styled-components/container";
 
 const validationSchema = yup.object().shape({
   name: yup.string().required(),

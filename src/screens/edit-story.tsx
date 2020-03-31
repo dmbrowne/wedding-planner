@@ -8,7 +8,7 @@ import { Add } from "grommet-icons";
 import { Node } from "slate";
 
 import { IStory, IChapter } from "../store/types";
-import SContainer from "../components/container";
+import SContainer from "../styled-components/container";
 import FirebaseImage from "../components/firebase-image";
 import RichText from "../components/editor";
 import ImageUpload from "../components/image-upload";

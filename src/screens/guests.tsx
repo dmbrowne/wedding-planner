@@ -8,7 +8,7 @@ import { GuestsContext } from "../components/guests-context";
 import Guest from "../components/guest";
 import GuestQuickView from "../components/guest-quick-view";
 import { IGuest } from "../store/types";
-import SContainer from "../components/container";
+import SContainer from "../styled-components/container";
 
 const Guests: React.FC<RouteComponentProps> = ({ match }) => {
   const { loadMore, getDocumentRef } = useContext(GuestsContext);

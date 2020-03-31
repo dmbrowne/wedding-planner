@@ -11,7 +11,7 @@ import Guest from "../components/guest";
 import { IEvent } from "../store/types";
 import AddCollaboratorModal from "../components/add-collaborator-modal";
 import CollaboratorsList from "../components/collaborators-list";
-import GridListing from "../styled/grid-listing";
+import GridListing from "../styled-components/grid-listing";
 import RoundedCard from "../components/rounded-card";
 import { Add } from "grommet-icons";
 import { format } from "date-fns";

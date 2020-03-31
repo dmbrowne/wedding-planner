@@ -8,7 +8,7 @@ import shortid from "shortid";
 import { firestore } from "firebase/app";
 import { humaneAddress } from "../utils";
 import { RouteComponentProps } from "react-router-dom";
-import SContainer from "../components/container";
+import SContainer from "../styled-components/container";
 
 const CreateEventService: React.FC<RouteComponentProps<{ weddingId: string; eventId: string }>> = ({ match, history }) => {
   const { eventId, weddingId } = match.params;

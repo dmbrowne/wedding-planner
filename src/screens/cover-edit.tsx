@@ -5,7 +5,7 @@ import { RouteComponentProps } from "react-router-dom";
 import debounce from "debounce";
 
 import RichText from "../components/editor";
-import SContainer from "../components/container";
+import SContainer from "../styled-components/container";
 import { useStateSelector } from "../store/redux";
 import ImageUpload from "../components/image-upload";
 import { Node } from "slate";

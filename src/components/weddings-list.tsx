@@ -4,7 +4,7 @@ import { Add } from "grommet-icons";
 import RoundedCard from "../components/rounded-card";
 import { IWedding } from "../store/types";
 import { Text } from "grommet";
-import GridListing from "../styled/grid-listing";
+import GridListing from "../styled-components/grid-listing";
 
 interface IProps {
   weddings: IWedding[];

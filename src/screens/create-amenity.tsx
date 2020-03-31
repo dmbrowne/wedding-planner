@@ -13,7 +13,7 @@ import { ReactComponent as Restaurant } from "../icons/restaurant.svg";
 import { humaneAddress } from "../utils";
 import { firestore } from "firebase/app";
 import { IAmenity, EAmenityTypes } from "../store/types";
-import SContainer from "../components/container";
+import SContainer from "../styled-components/container";
 import { orderedEventsListSelector } from "../selectors/selectors";
 
 interface IProps extends RouteComponentProps<{ eventId: string; weddingId: string }> {}

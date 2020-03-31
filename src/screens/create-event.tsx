@@ -13,7 +13,7 @@ import { IUser, IEvent, TEventFormData } from "../store/types";
 import AuthContext from "../components/auth-context";
 import { humaneAddress, dateAndTimeValidation } from "../utils";
 import DateAndTimeForm from "../components/date-and-time-form";
-import SContainer from "../components/container";
+import SContainer from "../styled-components/container";
 import CollaboratorEditableList from "../components/collaborator-editable-list";
 
 const validationSchema = yup.object().shape({

@@ -3,7 +3,7 @@ import { Heading, Text, Box, FormField, TextInput, Button, CheckBox } from "grom
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 import { Drag } from "grommet-icons";
 import { Switch } from "gestalt";
-import SContainer from "../components/container";
+import SContainer from "../styled-components/container";
 
 enum ESection {
   Cover = "Cover",

@@ -5,11 +5,11 @@ import { Spinner } from "gestalt";
 import { RouteComponentProps, Link } from "react-router-dom";
 import { Add } from "grommet-icons";
 
-import SContainer from "../components/container";
+import SContainer from "../styled-components/container";
 import AuthContext from "../components/auth-context";
 import RoundedCard from "../components/rounded-card";
 import AddNewStoryModal from "../components/add-new-story-modal";
-import GridListing from "../styled/grid-listing";
+import GridListing from "../styled-components/grid-listing";
 import { IStory } from "../store/types";
 
 interface IProps extends RouteComponentProps<{ weddingId: string }> {}
