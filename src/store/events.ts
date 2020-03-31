@@ -1,6 +1,10 @@
 import { IEvent, IEventGuest, IPlusOneGuest, IAmenity } from "./types";
 
 export interface IReducer {
+  subscriptions: {
+    allEvents?: boolean;
+    allAmenties?: boolean;
+  };
   eventsById: {
     [eventId: string]: Omit<IEvent, "guests">;
   };
@@ -23,6 +27,11 @@ export interface IReducer {
   };
   amenitiesOrder: string[];
 }
+
+export const setSubscription = (key: keyof IReducer["subscriptions"], value: boolean) => ({
+  type: "events/SET_SUBSCRIPTION" as "events/SET_SUBSCRIPTION",
+  payload: { key, value },
+});
 
 export const fetchEventSuccess = (event: IEvent) => ({
   type: "events/FETCH_SUCCESS" as "events/FETCH_SUCCESS",
@@ -108,9 +117,11 @@ type TActions =
   | ReturnType<typeof applyEventListingOrder>
   | ReturnType<typeof setAmenityOrder>
   | ReturnType<typeof fetchAmenitySuccess>
-  | ReturnType<typeof deleteAmenitySuccess>;
+  | ReturnType<typeof deleteAmenitySuccess>
+  | ReturnType<typeof setSubscription>;
 
 const initalState: IReducer = {
+  subscriptions: {},
   eventGuestOrder: [],
   eventsOrder: [],
   eventsById: {},
@@ -242,6 +253,14 @@ export default function eventsReducer(state: IReducer = initalState, action: TAc
       return {
         ...state,
         amenitiesOrder: action.payload,
+      };
+    case "events/SET_SUBSCRIPTION":
+      return {
+        ...state,
+        subscriptions: {
+          ...state.subscriptions,
+          [action.payload.key]: action.payload.value,
+        },
       };
     default:
       return state;

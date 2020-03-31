@@ -11,6 +11,9 @@ const GridListing = styled.div`
   @media (min-width: 1024px) {
     grid-template-columns: repeat(3, 1fr);
   }
+  @media (min-width: 1680px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
 `;
 
 export default GridListing;

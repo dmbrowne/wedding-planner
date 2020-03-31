@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { Spinner, Avatar, Switch } from "gestalt";
+import React, { useState, useRef, useContext } from "react";
+import { Spinner, Avatar } from "gestalt";
 import { Box, Text, Heading, Button } from "grommet";
 import { firestore } from "firebase/app";
 import { RouteComponentProps } from "react-router-dom";
@@ -11,33 +11,33 @@ import Guest from "../components/guest";
 import { IEvent } from "../store/types";
 import AddCollaboratorModal from "../components/add-collaborator-modal";
 import CollaboratorsList from "../components/collaborators-list";
-import EventsWatcher from "../components/events-watcher";
 import GridListing from "../styled/grid-listing";
 import RoundedCard from "../components/rounded-card";
 import { Add } from "grommet-icons";
 import { format } from "date-fns";
+import WeddingEventsContext from "../context/wedding-events";
 
 const WeddingSettings: React.FC<RouteComponentProps<{ weddingId: string }>> = ({ match, history }) => {
   const weddingId = match.params.weddingId;
   const { current: db } = useRef(firestore());
+  const { subscribed, subscribe } = useContext(WeddingEventsContext);
   const weddingEvents = useStateSelector(orderedEventsListSelector);
   const { wedding } = useStateSelector(state => state.activeWedding);
   const [showAddCollaboratorModal, setShowAddCollaboratorModal] = useState(false);
 
+  if (!subscribed) subscribe(weddingId);
+
   const updateWeddingField = (values: Partial<{ [field in keyof IEvent]: IEvent[field] }>) => {
     db.doc(`weddings/${weddingId}`).update(values);
   };
-  const updateWeddingName = ({ name }: { name: string }) => {
-    updateWeddingField({ name });
-  };
 
-  if (!wedding?.name) {
+  if (!wedding) {
     return <Spinner accessibilityLabel="Loading wedding details" show />;
   }
 
   return (
     <Box style={{ display: "block" }} pad="medium">
-      <NameForm label="Wedding name" initialName={wedding.name} onSubmit={updateWeddingName} />
+      <NameForm label="Wedding name" initialName={wedding.name} onSubmit={({ name }) => updateWeddingField({ name })} />
 
       <Box as="section" margin={{ bottom: "medium" }}>
         <Heading level={4} children="The couple" />
@@ -100,9 +100,4 @@ const WeddingSettings: React.FC<RouteComponentProps<{ weddingId: string }>> = ({
   );
 };
 
-const WeddingSettingsScreen: React.FC<RouteComponentProps<{ weddingId: string }>> = props => (
-  <EventsWatcher weddingId={props.match.params.weddingId}>
-    <WeddingSettings {...props} />
-  </EventsWatcher>
-);
-export default WeddingSettingsScreen;
+export default WeddingSettings;

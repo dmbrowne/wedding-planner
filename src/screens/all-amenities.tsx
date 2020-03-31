@@ -1,19 +1,24 @@
-import React from "react";
-import { useStateSelector } from "../store/redux";
-import { orderedAmenitiesSelector } from "../selectors/selectors";
-import GridListing from "../styled/grid-listing";
-import RoundedCard from "../components/rounded-card";
+import React, { useContext } from "react";
 import { Heading, Text } from "grommet";
 import { Add } from "grommet-icons";
 import { RouteComponentProps } from "react-router-dom";
-import SContainer from "../components/container";
 
-const AllAmenities: React.FC<RouteComponentProps> = ({ history, match }) => {
+import RoundedCard from "../components/rounded-card";
+import SContainer from "../components/container";
+import { useStateSelector } from "../store/redux";
+import { orderedAmenitiesSelector } from "../selectors/selectors";
+import GridListing from "../styled/grid-listing";
+import AllAmenitiesContext from "../context/all-amenities";
+
+const AllAmenities: React.FC<RouteComponentProps<{ weddingId: string }>> = ({ history, match }) => {
   const amenities = useStateSelector(orderedAmenitiesSelector);
+  const { subscribe, subscribed } = useContext(AllAmenitiesContext);
+
+  if (!subscribed) subscribe(match.params.weddingId);
+
   return (
     <SContainer>
       <Heading level={1}>Amenities</Heading>
-      {amenities.length === 0 && <Text margin={{ horizontal: "medium", bottom: "medium" }} children="No amenities added yet" />}
       <GridListing>
         {amenities.map(amenity => (
           <RoundedCard key={amenity.id} margin={{ vertical: "xxsmall" }} elevation="small" pad="medium">

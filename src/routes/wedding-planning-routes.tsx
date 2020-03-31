@@ -16,7 +16,6 @@ import Attendees from "../screens/guests";
 import CreateGuests from "../screens/create-guests";
 import WeddingHome from "../screens/wedding-home";
 import TableSeating from "../screens/table-seating";
-import Invitations from "../screens/invitations";
 import WebsiteConfig from "../screens/website-config";
 import CoverEdit from "../screens/cover-edit";
 import OurStories from "../screens/our-stories";
@@ -29,9 +28,11 @@ import { EventsRoute } from "./event-routes";
 import { AppFrame, Main } from "../app";
 import WeddingSettings from "../screens/wedding-settings";
 import EditStory from "../screens/edit-story";
-import { fetchEventSuccess, updateEventSuccess } from "../store/events";
+import { fetchEventSuccess } from "../store/events";
 import AllAmenities from "../screens/all-amenities";
 import CreateAmenity from "../screens/create-amenity";
+import { WeddingEventsContextProvider } from "../context/wedding-events";
+import { AllAmenitiesContextProvider } from "../context/all-amenities";
 
 export const WeddingPlanningRoutes: React.FC<RouteComponentProps<{ weddingId: string }>> = ({ match }) => {
   const { current: db } = useRef(firestore());
@@ -41,11 +42,6 @@ export const WeddingPlanningRoutes: React.FC<RouteComponentProps<{ weddingId: st
   const wedding = useStateSelector(state => state.activeWedding.wedding);
   const [menuOpen, setMenuOpen] = useState(false);
   const collaboratorIds = (wedding && wedding._private && wedding._private.collaborators) || [];
-
-  // if (!wedding) {
-  //   // hack for now, until custom hooks that communicate with firebase and defensively coded against null weddingIds
-  //   dispatch(fetchWeddingSuccess({ id: weddingId } as IWedding));
-  // }
 
   useEffect(() => {
     return db.doc(`weddings/${weddingId}`).onSnapshot(snap => {
@@ -78,41 +74,44 @@ export const WeddingPlanningRoutes: React.FC<RouteComponentProps<{ weddingId: st
 
   return (
     <Route>
-      <AlgoliaSearchKeyProvider weddingId={weddingId}>
-        <GuestsProvider weddingId={weddingId}>
-          <AppFrame>
-            <Box basis={isDesktopOrHigher ? "1/4" : "50px"} width={{ max: "300px" }} elevation="small">
-              <Box
-                background="white"
-                width={isDesktopOrHigher ? "auto" : menuOpen ? "300px" : "100%"}
-                fill="vertical"
-                style={{ position: !isDesktopOrHigher && menuOpen ? "fixed" : "static", zIndex: 10 }}
-              >
-                {!isDesktopOrHigher && <Button style={{ height: "64px" }} icon={<Menu />} onClick={() => setMenuOpen(!menuOpen)} />}
-                {(isDesktopOrHigher || menuOpen) && <SiteNav onClose={() => setMenuOpen(false)} rootPath={match.url} />}
-              </Box>
-            </Box>
-            <Main>
-              <TopNav />
-              <Switch>
-                <AuthenticatedRoute path={`${match.path}/events`} component={EventsRoute} />
-                <AuthenticatedRoute path={`${match.path}/guests/create`} component={CreateGuests} />
-                <AuthenticatedRoute path={`${match.path}/guests`} component={Attendees} />
-                <AuthenticatedRoute path={`${match.path}/table-seating`} component={TableSeating} />
-                <AuthenticatedRoute exact path={`${match.path}/sections`} component={WebsiteConfig} />
-                <AuthenticatedRoute exact path={`${match.path}/cover`} component={CoverEdit} />
-                <AuthenticatedRoute exact path={`${match.path}/invitations`} component={Invitations} />
-                <AuthenticatedRoute exact path={`${match.path}/stories`} component={OurStories} />
-                <AuthenticatedRoute exact path={`${match.path}/stories/:storyId`} component={EditStory} />
-                <AuthenticatedRoute exact path={`${match.path}/settings`} component={WeddingSettings} />
-                <AuthenticatedRoute exact path={`${match.path}/amenities`} component={AllAmenities} />
-                <AuthenticatedRoute path={`${match.path}/amenities/add-amenity`} component={CreateAmenity} />
-                <AuthenticatedRoute component={WeddingHome} />
-              </Switch>
-            </Main>
-          </AppFrame>
-        </GuestsProvider>
-      </AlgoliaSearchKeyProvider>
+      <WeddingEventsContextProvider>
+        <AllAmenitiesContextProvider>
+          <AlgoliaSearchKeyProvider weddingId={weddingId}>
+            <GuestsProvider weddingId={weddingId}>
+              <AppFrame>
+                <Box basis={isDesktopOrHigher ? "1/4" : "50px"} width={{ max: "300px" }} elevation="small">
+                  <Box
+                    background="white"
+                    width={isDesktopOrHigher ? "auto" : menuOpen ? "300px" : "100%"}
+                    fill="vertical"
+                    style={{ position: !isDesktopOrHigher && menuOpen ? "fixed" : "static", zIndex: 10 }}
+                  >
+                    {!isDesktopOrHigher && <Button style={{ height: "64px" }} icon={<Menu />} onClick={() => setMenuOpen(!menuOpen)} />}
+                    {(isDesktopOrHigher || menuOpen) && <SiteNav onClose={() => setMenuOpen(false)} rootPath={match.url} />}
+                  </Box>
+                </Box>
+                <Main>
+                  <TopNav />
+                  <Switch>
+                    <AuthenticatedRoute path={`${match.path}/events`} component={EventsRoute} />
+                    <AuthenticatedRoute path={`${match.path}/guests/create`} component={CreateGuests} />
+                    <AuthenticatedRoute path={`${match.path}/guests`} component={Attendees} />
+                    <AuthenticatedRoute path={`${match.path}/table-seating`} component={TableSeating} />
+                    <AuthenticatedRoute exact path={`${match.path}/sections`} component={WebsiteConfig} />
+                    <AuthenticatedRoute exact path={`${match.path}/cover`} component={CoverEdit} />
+                    <AuthenticatedRoute exact path={`${match.path}/stories`} component={OurStories} />
+                    <AuthenticatedRoute exact path={`${match.path}/stories/:storyId`} component={EditStory} />
+                    <AuthenticatedRoute exact path={`${match.path}/settings`} component={WeddingSettings} />
+                    <AuthenticatedRoute exact path={`${match.path}/amenities`} component={AllAmenities} />
+                    <AuthenticatedRoute path={`${match.path}/amenities/add-amenity`} component={CreateAmenity} />
+                    <AuthenticatedRoute component={WeddingHome} />
+                  </Switch>
+                </Main>
+              </AppFrame>
+            </GuestsProvider>
+          </AlgoliaSearchKeyProvider>
+        </AllAmenitiesContextProvider>
+      </WeddingEventsContextProvider>
     </Route>
   );
 };

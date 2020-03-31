@@ -3,11 +3,9 @@ import { withRouter, RouteComponentProps } from "react-router-dom";
 import { ReactComponent as Logo } from "../icons/jumpbroom.svg";
 import { ReactComponent as PicCaption } from "../icons/pic_caption.svg";
 import { ReactComponent as HimHer } from "../icons/him_her.svg";
-import { ReactComponent as Ring } from "../icons/ring.svg";
 import { ReactComponent as Table } from "../icons/table.svg";
-import { ReactComponent as Invite } from "../icons/invite.svg";
 import { Box, Text, Heading, BoxProps } from "grommet";
-import { Calendar, Group, Catalog, Location, Gift } from "grommet-icons";
+import { Group, Catalog, Location, Gift } from "grommet-icons";
 
 interface IProps extends RouteComponentProps {
   rootPath?: string;
@@ -76,19 +74,12 @@ const SiteNav: React.FC<IProps> = ({ onClose, history, rootPath = "" }) => {
       <Heading level={6} margin={{ top: "medium", bottom: "xsmall", left: "large" }} size="small">
         Event planning
       </Heading>
-      <MenuItem icon={<Group />} isActive={isActive("guests")} onClick={viewRoute(`${rootPath}/guests`)} label="Guests" />
-      <MenuItem icon={<Calendar />} isActive={isActive("events")} onClick={viewRoute(`${rootPath}/events`)} label="Events" />
+      <MenuItem icon={<Group />} isActive={isActive("guests")} onClick={viewRoute(`${rootPath}/guests`)} label="Guests directory" />
       <MenuItem
         icon={<Box width="24px" height="24px" children={<Table />} />}
         isActive={isActive("table-seating")}
         onClick={viewRoute(`${rootPath}/table-seating`)}
         label="Table seating"
-      />
-      <MenuItem
-        icon={<Box width="24px" height="24px" children={<Invite />} />}
-        isActive={isActive("invitations")}
-        onClick={viewRoute(`${rootPath}/invitations`)}
-        label="Invitations"
       />
     </Box>
   );
