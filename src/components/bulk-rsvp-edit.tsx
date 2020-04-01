@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { Button, Heading, Box, Layer, Text, CheckBox } from "grommet";
-import { Close } from "grommet-icons";
+import { Button, Box, Text, CheckBox } from "grommet";
 import { IService } from "../store/types";
+import Modal from "./modal";
 
 interface IBulkEditProps {
   services?: IService[];
@@ -23,7 +23,7 @@ export const BulkRsvpEdit: React.FC<IBulkEditProps> = ({ services, onUpdate, sel
       const attendanceMap = services.reduce(
         (accum, service) => ({
           ...accum,
-          [service.id]: selectedServiceIds.includes(service.id)
+          [service.id]: selectedServiceIds.includes(service.id),
         }),
         {} as {
           [serviceId: string]: boolean;
@@ -43,43 +43,38 @@ export const BulkRsvpEdit: React.FC<IBulkEditProps> = ({ services, onUpdate, sel
     setSelectedServiceIds([...selectedServiceIds, id]);
   };
   return (
-    <Layer>
-      <Box width="500px" height={{ min: "400px", max: "650px" }} overflow="auto" pad="medium">
-        <Button alignSelf="end" icon={<Close />} onClick={onClose} />
-        <Heading level={3} children="RSVP" />
-        {services ? (
-          <>
-            <Text as="p">
-              You have selected <strong>{selectedGuestAmount}</strong> guests, set thier attendance by selecting the
-              list of event services below.
-            </Text>
-            {services.map(service => (
-              <CheckBox
-                label={service.name}
-                checked={selectedServiceIds.includes(service.id)}
-                onChange={e => (e.target.checked ? check(service.id) : unCheck(service.id))}
-              />
-            ))}
-            <Text as="p" size="small" color="dark-6">
-              Services that are ticked will mark all {selectedGuestAmount} guests as attending for that service.
-              Services that are left unticked will result in the selected guests being marked as not attending those
-              services.
-            </Text>
+    <Modal title="RSVP" contentContainerProps={{ height: { min: "400px", max: "650px" } }} onClose={onClose}>
+      {services ? (
+        <>
+          <Text as="p">
+            You have selected <strong>{selectedGuestAmount}</strong> guests, set thier attendance by selecting the list of event services
+            below.
+          </Text>
+          {services.map(service => (
+            <CheckBox
+              label={service.name}
+              checked={selectedServiceIds.includes(service.id)}
+              onChange={e => (e.target.checked ? check(service.id) : unCheck(service.id))}
+            />
+          ))}
+          <Text as="p" size="small" color="dark-6">
+            Services that are ticked will mark all {selectedGuestAmount} guests as attending for that service. Services that are left
+            unticked will result in the selected guests being marked as not attending those services.
+          </Text>
 
-            <Button primary label="Update" alignSelf="end" margin={{ top: "medium" }} onClick={() => update()} />
-          </>
-        ) : (
-          <>
-            <Text>
-              You have selected <strong>{selectedGuestAmount}</strong> guests, what would you like to do?
-            </Text>
-            <Box justify="end" direction="row" gap="small" margin={{ vertical: "medium" }}>
-              <Button primary color="status-critical" label="Set as not attending" />
-              <Button primary color="neutral-1" label="Set as attending" />
-            </Box>
-          </>
-        )}
-      </Box>
-    </Layer>
+          <Button primary label="Update" alignSelf="end" margin={{ top: "medium" }} onClick={() => update()} />
+        </>
+      ) : (
+        <>
+          <Text>
+            You have selected <strong>{selectedGuestAmount}</strong> guests, what would you like to do?
+          </Text>
+          <Box justify="end" direction="row" gap="small" margin={{ vertical: "medium" }}>
+            <Button primary color="status-critical" label="Set as not attending" />
+            <Button primary color="neutral-1" label="Set as attending" />
+          </Box>
+        </>
+      )}
+    </Modal>
   );
 };

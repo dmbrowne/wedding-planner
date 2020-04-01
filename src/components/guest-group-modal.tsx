@@ -4,6 +4,7 @@ import { Heading, Button, FormField, TextInput, Box, Text, Layer } from "grommet
 import { Edit, FormClose, FormCheckmark, Close } from "grommet-icons";
 import EventGuest from "./event-guest";
 import { useStateSelector } from "../store/redux";
+import Modal from "./modal";
 
 interface IProps {
   guestGroup: IGuestGroup;
@@ -12,12 +13,7 @@ interface IProps {
   onDeleteGroup: () => void;
 }
 
-const GuestGroupModalContent: React.FC<IProps> = ({
-  guestGroup,
-  onUpdateName,
-  removeEventGuestFromGroup,
-  onDeleteGroup
-}) => {
+const GuestGroupModalContent: React.FC<IProps> = ({ guestGroup, onUpdateName, removeEventGuestFromGroup, onDeleteGroup }) => {
   const [groupName, setGroupName] = useState(guestGroup.name);
   const [editMode, setEditMode] = useState(false);
   const [editError, setEditError] = useState(false);
@@ -47,11 +43,7 @@ const GuestGroupModalContent: React.FC<IProps> = ({
       {editMode && (
         <>
           <FormField label="Group name" error={editError ? "A name is required" : undefined}>
-            <TextInput
-              value={groupName}
-              onChange={e => onChangeGroupName(e.target.value)}
-              placeholder="Enter a name for this group"
-            />
+            <TextInput value={groupName} onChange={e => onChangeGroupName(e.target.value)} placeholder="Enter a name for this group" />
           </FormField>
           <Box direction="row" justify="between">
             <Button label="Cancel" icon={<FormClose />} onClick={() => setEditMode(false)} />
@@ -87,12 +79,9 @@ interface IGroupModalProps extends Omit<IProps, "guestGroup"> {
 const GuestGroupModal: React.FC<IGroupModalProps> = ({ groupId, onClose, ...props }) => {
   const group = useStateSelector(state => state.guestGroups.byId[groupId]);
   return (
-    <Layer>
-      <Box overflow="auto" width="500px" height="500px" pad="medium">
-        <Button alignSelf="end" icon={<Close />} onClick={onClose} />
-        <GuestGroupModalContent guestGroup={group} {...props} />
-      </Box>
-    </Layer>
+    <Modal onClose={onClose}>
+      <GuestGroupModalContent guestGroup={group} {...props} />
+    </Modal>
   );
 };
 

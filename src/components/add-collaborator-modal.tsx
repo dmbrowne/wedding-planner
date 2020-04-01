@@ -8,6 +8,7 @@ import { IAdminInvite } from "../store/types";
 import { Layer, Box, Button, Heading, TextInput } from "grommet";
 import { Close } from "grommet-icons";
 import { Formik } from "formik";
+import Modal from "./modal";
 
 const AddCollaboratorModal: React.FC<{ weddingId: string; onClose: () => void }> = ({ weddingId, onClose }) => {
   const { user: auth } = useContext(AuthContext);
@@ -37,22 +38,18 @@ const AddCollaboratorModal: React.FC<{ weddingId: string; onClose: () => void }>
   };
 
   return (
-    <Layer>
-      <Box width="500px" pad="medium">
-        <Button icon={<Close />} alignSelf="end" onClick={onClose} />
-        <Heading level={3}>Invite someone to co-edit on your wedding</Heading>
-        <Formik initialValues={{ email: "" }} validationSchema={newCollaboratorFormValidationSchema} onSubmit={onNewCollaboratorSubmit}>
-          {fProps => (
-            <form onSubmit={fProps.handleSubmit} onReset={fProps.handleReset}>
-              <Box align="end">
-                <TextInput name="email" placeholder="enter thier email" {...fProps.getFieldProps("email")} />
-                <Button primary margin={{ vertical: "medium" }} label="Send invite" type="submit" disabled={!fProps.isValid} />
-              </Box>
-            </form>
-          )}
-        </Formik>
-      </Box>
-    </Layer>
+    <Modal title="Invite someone to co-edit on your wedding" onClose={onClose}>
+      <Formik initialValues={{ email: "" }} validationSchema={newCollaboratorFormValidationSchema} onSubmit={onNewCollaboratorSubmit}>
+        {fProps => (
+          <form onSubmit={fProps.handleSubmit} onReset={fProps.handleReset}>
+            <Box align="end">
+              <TextInput name="email" placeholder="enter thier email" {...fProps.getFieldProps("email")} />
+              <Button primary margin={{ vertical: "medium" }} label="Send invite" type="submit" disabled={!fProps.isValid} />
+            </Box>
+          </form>
+        )}
+      </Formik>
+    </Modal>
   );
 };
 

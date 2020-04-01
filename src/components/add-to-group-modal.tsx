@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Layer, Box, Heading, InfiniteScroll, Text, Button } from "grommet";
+import { Box, Heading, InfiniteScroll, Text, Button } from "grommet";
 import { useStateSelector } from "../store/redux";
 import { orderedGuestGroupsSelector } from "../selectors/selectors";
 import AlgoliaGroupSearch, { IAlgoliaGuestGroup } from "./algolia-group-search";
@@ -8,6 +8,7 @@ import { IGuestGroup } from "../store/guest-groups";
 import EventGuest from "./event-guest";
 import { firestore } from "firebase/app";
 import { Close, Add } from "grommet-icons";
+import Modal from "./modal";
 
 interface IProps {
   weddingId: string;
@@ -112,14 +113,10 @@ const AddToGroupModal: React.FC<IProps> = ({ eventId, weddingId, onSelect, onClo
   );
 
   return (
-    <Layer>
-      <Box width="500px" height="500px" pad="medium">
-        <Button icon={<Close />} onClick={onClose} alignSelf="end" />
-        <Heading level={3}>Add to group...</Heading>
-        <AlgoliaGroupSearch query={query} onChange={setQuery} onResult={setSearchResults} />
-        {query ? (searchResults.length > 0 ? renderSearchResults() : createNewGroupMessage()) : renderGroupsListing()}
-      </Box>
-    </Layer>
+    <Modal title="Add to group..." onClose={onClose}>
+      <AlgoliaGroupSearch query={query} onChange={setQuery} onResult={setSearchResults} />
+      {query ? (searchResults.length > 0 ? renderSearchResults() : createNewGroupMessage()) : renderGroupsListing()}
+    </Modal>
   );
 };
 
