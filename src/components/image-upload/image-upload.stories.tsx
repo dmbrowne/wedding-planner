@@ -1,9 +1,8 @@
 import React, { ReactNode } from "react";
-import styled from "styled-components";
-import { Title, Subtitle, Description, Primary, Props, Stories } from "@storybook/addon-docs/blocks";
-import ImageUpload from ".";
+import { ImageUpload } from ".";
 import { FirebaseImageComponent } from "../firebase-image";
-import ImageUploadComponent from "./component";
+import { ImageUploadComponent } from "./component";
+import Center from "../../styled-components/storybook-components";
 
 export default {
   title: "Components|Image Upload",
@@ -12,30 +11,11 @@ export default {
     FirebaseImage: FirebaseImageComponent,
     ImageUploadComponent,
   },
-  parameters: {
-    docs: {
-      page: () => (
-        <>
-          <Title />
-          <Subtitle />
-          <Description />
-          <Primary />
-          <Props />
-          <Stories />
-        </>
-      ),
-    },
-  },
 };
 
-const Center = styled.div`
-  width: 200px;
-  height: 200px;
-`;
+export const ToStorybook = () => <ImageUpload uploadRefPath="/image/blah" onUploadSuccess={() => {}} name="image" />;
 
-export const Default = () => <ImageUpload uploadRefPath="/image/blah" onUploadSuccess={() => {}} name="image" />;
-
-Default.story = {
+ToStorybook.story = {
   name: "image-upload",
   description: "description",
   decorators: [(storyFn: () => ReactNode) => <Center>{storyFn()}</Center>],

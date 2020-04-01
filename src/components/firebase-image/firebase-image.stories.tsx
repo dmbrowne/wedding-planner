@@ -1,23 +1,18 @@
 import React, { ReactNode } from "react";
-import styled from "styled-components";
-import FirebaseImageComponent from "./firebase-image";
+import { FirebaseImageComponent } from "./firebase-image";
 import { text } from "@storybook/addon-knobs";
+import Center from "../../styled-components/storybook-components";
 
 export default {
   title: "Components|Firebase Image",
   component: FirebaseImageComponent,
 };
 
-const Center = styled.div`
-  width: 200px;
-  height: 200px;
-`;
-
-export const Default = () => (
+export const ToStorybook = () => (
   <FirebaseImageComponent imageRef={text("imageRef", "/weddings/3KA4zZTtS8XyAPh7Qx1C/cover")} children={imgSrc => <img src={imgSrc} />} />
 );
 
-Default.story = {
+ToStorybook.story = {
   name: "firebase-image",
   decorators: [(storyFn: () => ReactNode) => <Center>{storyFn()}</Center>],
 };
