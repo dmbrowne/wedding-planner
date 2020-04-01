@@ -1,16 +1,20 @@
-import React, { useRef, useContext } from "react";
+import React, { FC, useRef, useContext } from "react";
 import * as yup from "yup";
 import { firestore } from "firebase/app";
 import { addDays } from "date-fns";
-
-import AuthContext from "../components/auth-context";
-import { IAdminInvite } from "../store/types";
-import { Layer, Box, Button, Heading, TextInput } from "grommet";
-import { Close } from "grommet-icons";
+import { Box, Button, TextInput } from "grommet";
 import { Formik } from "formik";
-import Modal from "./modal";
 
-const AddCollaboratorModal: React.FC<{ weddingId: string; onClose: () => void }> = ({ weddingId, onClose }) => {
+import AuthContext from "../auth-context";
+import { IAdminInvite } from "../../store/types";
+import Modal from "../modal";
+
+interface IProps {
+  weddingId: string;
+  onClose: () => void;
+}
+
+export const AddCollaboratorModal: FC<IProps> = ({ weddingId, onClose }) => {
   const { user: auth } = useContext(AuthContext);
   const { current: db } = useRef(firestore());
   const { current: newCollaboratorFormValidationSchema } = useRef(
