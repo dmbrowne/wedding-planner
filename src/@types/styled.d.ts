@@ -1,4 +1,4 @@
-import { ThemeType, grommet } from "grommet";
+import { grommet } from "grommet";
 import "styled-components";
 
 type Theme = typeof grommet;
