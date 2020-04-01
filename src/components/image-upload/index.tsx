@@ -1,5 +1,4 @@
-import React, { useRef } from "react";
-import PropTypes from "prop-types";
+import React, { useRef, FC } from "react";
 import firebase from "firebase/app";
 import ImageUploadComponent, { IComponentProps } from "./component";
 
@@ -11,7 +10,7 @@ interface IProps extends Omit<IComponentProps, "onInputFileChange" | "imageRef" 
   previewImageRef?: string;
 }
 
-const ImageUpload: React.FC<IProps> = ({
+export const ImageUpload: FC<IProps> = ({
   uploadRefPath,
   fileTypeWhiteList,
   onUploadSuccess,

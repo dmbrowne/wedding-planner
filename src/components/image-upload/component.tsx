@@ -1,4 +1,4 @@
-import React, { InputHTMLAttributes } from "react";
+import React, { InputHTMLAttributes, FC } from "react";
 import { Box, Button, Text } from "grommet";
 import { Upload, Trash } from "grommet-icons";
 import FirebaseImage from "../firebase-image";
@@ -13,7 +13,7 @@ export interface IComponentProps extends InputHTMLAttributes<HTMLInputElement> {
   name: string;
 }
 
-const ImageUploadComponent: React.FC<IComponentProps> = ({ onInputFileChange, onDelete, label, imageRef, children, name, ...props }) => {
+export const ImageUploadComponent: FC<IComponentProps> = ({ onInputFileChange, onDelete, label, imageRef, children, name, ...props }) => {
   const deleteButton = (
     <Button disabled={props.disabled} onClick={onDelete}>
       <Box align="center">
