@@ -18,5 +18,11 @@ export const ToStorybook = () => <ImageUpload uploadRefPath="/image/blah" onUplo
 ToStorybook.story = {
   name: "image-upload",
   description: "description",
-  decorators: [(storyFn: () => ReactNode) => <Center>{storyFn()}</Center>],
+  decorators: [
+    (storyFn: () => ReactNode) => (
+      <Center>
+        <div style={{ height: 200 }}>{storyFn()}</div>
+      </Center>
+    ),
+  ],
 };
