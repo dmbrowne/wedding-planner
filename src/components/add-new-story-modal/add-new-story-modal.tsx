@@ -1,24 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, FC } from "react";
 import * as yup from "yup";
-import { Layer, Box, Button, Heading, Text, TextInput } from "grommet";
-import { Close } from "grommet-icons";
+import { Box, Button, Heading, Text, TextInput } from "grommet";
 import { Formik } from "formik";
-import CollaboratorEditableList from "./collaborator-editable-list";
-import Modal from "./modal";
+import CollaboratorEditableList from "../collaborator-editable-list";
+import Modal from "../modal";
 
 interface IProp {
   onSubmit: (values: { name: string; collaborators: string[] }) => any;
   onClose: () => any;
 }
 
-const AddNewStoryModal: React.FC<IProp> = ({ onSubmit, onClose }) => {
+export const AddNewStoryModal: FC<IProp> = ({ onSubmit, onClose }) => {
   const [collaboratorIds, setCollaboratorIds] = useState<string[]>([]);
-  const handleSubmit = (values: { name: string }) => {
-    onSubmit({ ...values, collaborators: collaboratorIds });
-  };
+  const handleSubmit = (values: { name: string }) => onSubmit({ ...values, collaborators: collaboratorIds });
   return (
     <Modal title="Create new story" onClose={onClose} contentContainerProps={{ height: undefined }}>
-      <Text>What's the story title?</Text>
+      <Text>What's the title of this story?</Text>
       <Text size="small" margin={{ bottom: "medium" }} color="dark-3">
         Suggestions: "How we met", "The story so far", "Our story"
       </Text>
