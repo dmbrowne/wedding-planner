@@ -7,7 +7,7 @@ module.exports = {
     "@storybook/addon-actions",
     "@storybook/addon-links",
     "@storybook/addon-knobs/register",
-    path.resolve(__dirname, "../src/storybook-decorators/withRedux/register.js"),
+    path.resolve(__dirname, "../src/storybook-decorators/with-redux/register.js"),
   ],
   webpackFinal: async config => {
     config.module.rules.push({

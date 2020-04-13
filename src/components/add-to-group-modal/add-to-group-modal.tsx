@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { FC, useState, useEffect } from "react";
 import { Box, Heading, InfiniteScroll, Text, Button } from "grommet";
-import { useStateSelector } from "../store/redux";
-import { orderedGuestGroupsSelector } from "../selectors/selectors";
-import AlgoliaGroupSearch, { IAlgoliaGuestGroup } from "./algolia-group-search";
-import useGuestGroups from "../hooks/use-guest-groups";
-import { IGuestGroup } from "../store/guest-groups";
-import EventGuest from "./event-guest";
+import { useStateSelector } from "../../store/redux";
+import { orderedGuestGroupsSelector } from "../../selectors/selectors";
+import AlgoliaGroupSearch, { IAlgoliaGuestGroup } from "../algolia-group-search";
+import useGuestGroups from "../../hooks/use-guest-groups";
+import { IGuestGroup } from "../../store/guest-groups";
+import EventGuest from "../event-guest";
 import { firestore } from "firebase/app";
 import { Close, Add } from "grommet-icons";
-import Modal from "./modal";
+import Modal from "../modal";
 
 interface IProps {
   weddingId: string;
@@ -18,7 +18,7 @@ interface IProps {
   getSelectedEventGuestIds: () => string[];
 }
 
-const AddToGroupModal: React.FC<IProps> = ({ eventId, weddingId, onSelect, onClose, getSelectedEventGuestIds }) => {
+export const AddToGroupModal: FC<IProps> = ({ eventId, weddingId, onSelect, onClose, getSelectedEventGuestIds }) => {
   const { loadMore, unsubscribe } = useGuestGroups(eventId, weddingId);
   const guestGroups = useStateSelector(orderedGuestGroupsSelector);
   const [query, setQuery] = useState("");
@@ -114,7 +114,9 @@ const AddToGroupModal: React.FC<IProps> = ({ eventId, weddingId, onSelect, onClo
 
   return (
     <Modal title="Add to group..." onClose={onClose}>
-      <AlgoliaGroupSearch query={query} onChange={setQuery} onResult={setSearchResults} />
+      <Box height={{ min: "50px" }}>
+        <AlgoliaGroupSearch query={query} onChange={setQuery} onResult={setSearchResults} />
+      </Box>
       {query ? (searchResults.length > 0 ? renderSearchResults() : createNewGroupMessage()) : renderGroupsListing()}
     </Modal>
   );

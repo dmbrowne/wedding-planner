@@ -1,10 +1,14 @@
 import React, { useState } from "react";
 import { Button } from "grommet";
 import { AddCollaboratorModal } from "./add-collaborator-modal";
+import Modal from "../modal";
 
 export default {
   title: "Components|Add Collaborator",
   component: AddCollaboratorModal,
+  subcomponents: {
+    Modal: Modal,
+  },
 };
 
 export const ToStorybook = () => {
@@ -18,5 +22,5 @@ export const ToStorybook = () => {
 };
 
 ToStorybook.story = {
-  name: "default",
+  name: "add-collaborator-modal",
 };

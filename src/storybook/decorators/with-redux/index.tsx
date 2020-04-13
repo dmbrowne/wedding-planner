@@ -1,6 +1,6 @@
 import React from "react";
 import addons, { makeDecorator } from "@storybook/addons";
-import store from "../../store/redux";
+import store from "../../../store/redux";
 import { Provider } from "react-redux";
 
 export default makeDecorator({

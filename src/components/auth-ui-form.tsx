@@ -33,8 +33,14 @@ const AuthUiForm: React.FC<IProps> = ({ onSuccess, presetEmail, emailDisabled })
       const action = () =>
         authMode === "login" ? auth().signInWithEmailAndPassword(email, password) : auth().createUserWithEmailAndPassword(email, password);
       action()
-        .then(onSuccess)
-        .catch(e => setAuthError(e.message));
+        .then(res => {
+          setShowSpinner(false);
+          if (onSuccess) onSuccess(res);
+        })
+        .catch(e => {
+          setShowSpinner(false);
+          setAuthError(e.message);
+        });
     }
   };
 

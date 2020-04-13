@@ -3,17 +3,14 @@ import algoliasearch from "algoliasearch/lite";
 import { Spinner } from "gestalt";
 import { TextInput } from "grommet";
 
-import { IGuest } from "../store/types";
-import { AlgoliaSearchKeyContext } from "./algolia-search-key";
-import { INewGuest } from "../store/use-new-guests-reducer";
-import { IGuestGroup } from "../store/guest-groups";
+import { AlgoliaSearchKeyContext } from "../algolia-search-key";
+import { IGuestGroup } from "../../store/guest-groups";
 
 export interface IAlgoliaGuestGroup extends IGuestGroup {
   _objectID: string;
   memberNames: string[];
 }
 
-type TGuest = IGuest | INewGuest;
 export interface IProps {
   onResult: (groups: IAlgoliaGuestGroup[]) => any;
   onChange: (value: string) => void;
@@ -21,7 +18,7 @@ export interface IProps {
   eventId?: string;
 }
 
-const AlgoliaGroupSearch: React.FC<IProps> = ({ onResult, query, eventId, onChange }) => {
+export const AlgoliaGroupSearch: React.FC<IProps> = ({ onResult, query, eventId, onChange }) => {
   const { key } = useContext(AlgoliaSearchKeyContext);
   const searchClient = key ? algoliasearch("KDLM57WWV5", key) : null;
   const index = searchClient ? searchClient.initIndex("guestGroups") : null;

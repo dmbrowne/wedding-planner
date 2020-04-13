@@ -14,7 +14,7 @@ app.use(bodyParser.json());
 app.use(
   cors({
     origin: (origin, cb) => {
-      const allowedOrigins = ["https://us-central1-wedlock-316f8.cloudfunctions.net", "http://localhost:3000"];
+      const allowedOrigins = ["https://us-central1-wedlock-316f8.cloudfunctions.net", "http://localhost:3000", "http://localhost:9009"];
       // allow requests with no origin (like mobile apps or curl requests)
       if (!origin) {
         cb(null, true);
@@ -25,7 +25,7 @@ app.use(
         return;
       }
       cb(null, true);
-    }
+    },
   })
 );
 app.use(validateFirebaseIdToken);
@@ -52,7 +52,7 @@ app.post<{ weddingId: string }>("/", async (req, res) => {
     // This filter ensures that only documents with correcsponding weddingId will be readable
     filters: `weddingId:${req.body.weddingId}`,
     // We also proxy the user_id as a unique token for this key.
-    userToken: req.user.user_id
+    userToken: req.user.user_id,
   };
 
   // Call the Algolia API to generate a unique key based on our search key
@@ -68,10 +68,7 @@ const getSearchKey = functions.https.onRequest(app);
 export default getSearchKey;
 
 async function validateFirebaseIdToken(req: express.Request, res: express.Response, next: express.NextFunction) {
-  if (
-    (!req.headers.authorization || !req.headers.authorization.startsWith("Bearer ")) &&
-    !(req.cookies && req.cookies.__session)
-  ) {
+  if ((!req.headers.authorization || !req.headers.authorization.startsWith("Bearer ")) && !(req.cookies && req.cookies.__session)) {
     res.status(403).send("Unauthorized");
     return;
   }

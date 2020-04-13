@@ -19,5 +19,5 @@ export const ToStorybook = () => (
 );
 
 ToStorybook.story = {
-  name: "image-upload",
+  name: "modal",
 };
