@@ -1,5 +1,3 @@
-# Project Witch
-
 > This project was created with `npx create react app --template typescript`
 
 **Required**
